@@ -241,7 +241,11 @@ try
                 stim_color = WhiteIndex(window_ptr);
                 if this_trial.cresp ~= resp
                     stim_fill_color = [1, 0, 0];
-                    stim_str = double('×');
+                    if resp == "none"
+                        stim_str = double('?');
+                    else
+                        stim_str = double('×');
+                    end
                 else
                     stim_fill_color = [0, 1, 0];
                     stim_str = double('√');
