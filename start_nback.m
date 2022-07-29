@@ -29,9 +29,10 @@ time_stimuli_secs = 1;
 time_blank_secs = 2;
 % used in "prac" phase, feedback duration
 time_feedback_secs = 0.5;
-% used in "test" part, interval for user's preparation for test
-time_wait_start_secs = 4;
-time_wait_end_secs = 4;
+% used in "test" phase, let user be prepare
+time_wait_start_secs = 2;
+% pre-cue interval
+time_precue_secs = 2;
 
 % ----prepare config and data recording table ----
 config = init_config();
@@ -112,7 +113,7 @@ try
     % TODO: add instruction for practice
 
     % wait for start
-    while true
+    while true && exp_phase == "test"
         [~, ~, key_code] = KbCheck(-1);
         if key_code(keys.exit)
             early_exit = true;
@@ -121,7 +122,7 @@ try
         DrawFormattedText(window_ptr, double('请稍候...'), ...
             'center', 'center');
         vbl = Screen('Flip', window_ptr);
-        if vbl >= start_time + config(1).stim_onset - 0.5 * ifi
+        if vbl >= start_time + time_wait_start_secs - 0.5 * ifi
             break
         end
     end
@@ -129,8 +130,27 @@ try
         if early_exit
             break
         end
-
+        
         this_trial = config(trial_order);
+
+        % present cue
+        if trial_order == 1
+            while true
+                [~, ~, key_code] = KbCheck(-1);
+                if key_code(keys.exit)
+                    early_exit = true;
+                    break
+                end
+                DrawFormattedText(window_ptr, ...
+                    [char(stim_type), '\n', num2str(task_load)], ...
+                    'center', 'center');
+                vbl = Screen('Flip', window_ptr);
+                if vbl >= start_time + this_trial.stim_onset - 0.5 * ifi
+                    break
+                end
+            end
+        end
+        
         % configure stimuli info
         switch stim_type
             case "digit"
@@ -339,7 +359,8 @@ end
         end
 
         % --- set timestamps ---
-        stim_onset = exp_onset + ((1:num_trials) - 1) * trial_length;
+        stim_onset = exp_onset + time_precue_secs + ...
+            ((1:num_trials) - 1) * trial_length;
         stim_offset = stim_onset + time_stimuli_secs;
         trial_end = stim_offset + time_blank_secs;
 
