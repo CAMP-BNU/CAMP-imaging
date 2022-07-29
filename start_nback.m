@@ -75,7 +75,7 @@ try
     Screen('BlendFunction', window_ptr, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     % set default font name and size
     Screen('TextFont', window_ptr, 'SimHei');
-    Screen('TextSize', window_ptr, 64);
+    Screen('TextSize', window_ptr, round(0.06 * RectHeight(window_rect)));
     % get inter flip interval
     ifi = Screen('GetFlipInterval', window_ptr);
     % make grid buffer
