@@ -1,4 +1,4 @@
-function [recordings, status, exception] = start_nback(args)
+function [recordings, status, exception] = start(args)
 %START_NBACK Starts stimuli presentation for n-back test
 %   Detailed explanation goes here
 arguments
@@ -54,6 +54,8 @@ screen_to_display = max(Screen('Screens'));
 old_visdb = Screen('Preference', 'VisualDebugLevel', 1);
 % do not skip synchronization test to make sure timing is accurate
 old_sync = Screen('Preference', 'SkipSyncTests', 0);
+% use FTGL text plugin
+old_text_render = Screen('Preference', 'TextRenderer', 1);
 % set priority to the top
 old_pri = Priority(MaxPriority(screen_to_display));
 % PsychDebugWindowConfiguration([], 0.1);
@@ -91,11 +93,7 @@ try
     draw_grid(buffer_grid);
 
     % display welcome screen and wait for a press of 's' to start
-    [welcome_img, ~, welcome_alpha] = ...
-        imread(fullfile('image', 'welcome.png'));
-    welcome_img(:, :, 4) = welcome_alpha;
-    welcome_tex = Screen('MakeTexture', window_ptr, welcome_img);
-    Screen('DrawTexture', window_ptr, welcome_tex);
+    draw_text_center_at(window_ptr, double('下面进入N-back任务'));
     Screen('Flip', window_ptr);
     % the flag to determine if the experiment should exit early
     early_exit = false;
@@ -119,8 +117,7 @@ try
             early_exit = true;
             break
         end
-        DrawFormattedText(window_ptr, double('请稍候...'), ...
-            'center', 'center');
+        draw_text_center_at(window_ptr, double('请稍候...'));
         vbl = Screen('Flip', window_ptr);
         if vbl >= start_time + time_wait_start_secs - 0.5 * ifi
             break
@@ -130,7 +127,7 @@ try
         if early_exit
             break
         end
-        
+
         this_trial = config(trial_order);
 
         % present cue
@@ -141,16 +138,21 @@ try
                     early_exit = true;
                     break
                 end
-                DrawFormattedText(window_ptr, ...
-                    [char(stim_type), '\n', num2str(task_load)], ...
-                    'center', 'center');
+                draw_text_center_at(window_ptr, char(stim_type), ...
+                    center(1), ...
+                    center(2) - 0.05 * RectHeight(window_rect), ...
+                    get_color('dark orange'));
+                draw_text_center_at(window_ptr, num2str(task_load), ...
+                    center(1), ...
+                    center(2) + 0.05 * RectHeight(window_rect), ...
+                    get_color('red'));
                 vbl = Screen('Flip', window_ptr);
                 if vbl >= start_time + this_trial.stim_onset - 0.5 * ifi
                     break
                 end
             end
         end
-        
+
         % configure stimuli info
         switch stim_type
             case "digit"
@@ -205,6 +207,7 @@ try
                 break
             end
         end
+
         % analyze user's response
         if ~resp_made
             resp_raw = "";
@@ -273,6 +276,7 @@ ShowCursor;
 % restore preferences
 Screen('Preference', 'VisualDebugLevel', old_visdb);
 Screen('Preference', 'SkipSyncTests', old_sync);
+Screen('Preference', 'TextRenderer', old_text_render);
 Priority(old_pri);
 
 if ~isempty(exception)
@@ -405,12 +409,23 @@ end
         Screen('FillRect', window_ptr, stim_fill_color, ...
             rect);
         if show_stim
-            text_bounds = Screen('TextBounds', window_ptr, stim_str);
-            Screen('DrawText', window_ptr, stim_str, ...
-                loc_coords(1) - round(text_bounds(3) / 2), ...
-                loc_coords(2) - round(text_bounds(4) / 2), ...
-                stim_color);
+            draw_text_center_at(window_ptr, stim_str, ...
+                loc_coords(1), loc_coords(2), stim_color);
         end
     end
 
+end
+
+function draw_text_center_at(w, string, x, y, color)
+if nargin <= 2
+    [x, y] = RectCenter(Screen('Rect', w));
+end
+if nargin <= 4
+    color = BlackIndex(w);
+end
+text_bounds = Screen('TextBounds', w, string);
+Screen('DrawText', w, string, ...
+    x - round(text_bounds(3) / 2), ...
+    y - round(text_bounds(4) / 2), ...
+    color);
 end
