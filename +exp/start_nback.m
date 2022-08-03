@@ -164,7 +164,7 @@ try
         % present stimuli
         resp_made = false;
         stim_status = 0;
-        stim_color = [0, 0, 1];
+        stim_color = get_color('blue');
         while true
             [key_pressed, timestamp, key_code] = KbCheck(-1);
             if key_code(keys.exit)
@@ -240,14 +240,14 @@ try
                 Screen('DrawTexture', window_ptr, buffer_grid);
                 stim_color = WhiteIndex(window_ptr);
                 if this_trial.cresp ~= resp
-                    stim_fill_color = [1, 0, 0];
+                    stim_fill_color = get_color('red');
                     if resp == "none"
                         stim_str = double('?');
                     else
                         stim_str = double('×');
                     end
                 else
-                    stim_fill_color = [0, 1, 0];
+                    stim_fill_color = get_color('green');
                     stim_str = double('√');
                 end
                 draw_stimuli(true);
