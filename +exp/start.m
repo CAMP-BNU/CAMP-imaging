@@ -161,9 +161,15 @@ try
             VariableNames={'stim_onset_real', 'stim_offset_real', ...
             'resp', 'resp_raw', 'acc', 'rt'}), ...
             height(cur_block_trials), 1);
-        switch cur_block.task_name
-            case "nback"
-                routine_nback()
+        for trial_order = 1:height(cur_block_trials)
+            if early_exit
+                break
+            end
+            this_trial = cur_block_trials(trial_order, :);
+            switch cur_block.task_name
+                case "nback"
+                    routine_nback()
+            end
         end
         recordings.trials_rec{block_order} = trials_rec;
     end
@@ -190,114 +196,103 @@ if ~isempty(exception)
 end
 
     function routine_nback()
-        for trial_order = 1:height(cur_block_trials)
-            if early_exit
+        % configure stimuli info
+        stim = struct( ...
+            'loc', grid_coords(this_trial.location, :), ...
+            'fill', gray, ...
+            'text', num2str(this_trial.number), ...
+            'color', get_color('blue'));
+
+        % present stimuli
+        resp_made = false;
+        stim_status = 0;
+        while ~early_exit
+            [key_pressed, timestamp, key_code] = KbCheck(-1);
+            if key_code(keys.exit)
+                early_exit = true;
                 break
             end
+            if key_pressed
+                if ~resp_made
+                    resp_code = key_code;
+                    resp_timestamp = timestamp;
+                end
+                resp_made = true;
+            end
+            Screen('DrawTexture', window_ptr, buffer_grid);
+            if timestamp < start_time_block + this_trial.stim_offset
+                draw_stimuli(stim);
+                vbl = Screen('Flip', window_ptr);
+                if stim_status == 0
+                    trials_rec.stim_onset_real(trial_order) = ...
+                        vbl - start_time_block;
+                    stim_status = 1;
+                end
+            else
+                vbl = Screen('Flip', window_ptr);
+                if stim_status == 1
+                    trials_rec.stim_offset_real(trial_order) = ...
+                        vbl - start_time_block;
+                    stim_status = 2;
+                end
+            end
+            if vbl >= start_time_block + this_trial.trial_end - 0.5 * ifi
+                break
+            end
+        end
 
-            this_trial = cur_block_trials(trial_order, :);
+        % analyze user's response
+        if ~resp_made
+            resp_raw = "";
+            resp = "none";
+            resp_time = 0;
+        else
+            % use "|" as delimiter for the KeyName of "|" is "\\"
+            resp_raw = string(strjoin(cellstr(KbName(resp_code)), '|'));
+            if ~resp_code(keys.left) && ~resp_code(keys.right)
+                resp = "neither";
+            elseif resp_code(keys.left) && resp_code(keys.right)
+                resp = "both";
+            elseif resp_code(keys.left)
+                resp = "left";
+            else
+                resp = "right";
+            end
+            resp_time = resp_timestamp - start_time_block - ...
+                trials_rec.stim_onset_real(trial_order);
+        end
+        trials_rec.resp(trial_order) = resp;
+        trials_rec.resp_raw(trial_order) = resp_raw;
+        trials_rec.acc(trial_order) = this_trial.cresp == resp;
+        trials_rec.rt(trial_order) = resp_time;
 
-            % configure stimuli info
-            stim_loc.coords = grid_coords(this_trial.location, :);
-            stim_text.text = num2str(this_trial.number);
-            stim_text.color = get_color('blue');
-
-            % present stimuli
-            resp_made = false;
-            stim_status = 0;
+        % give feedback when in practice
+        if contains(task_config, "prac")
             while true
-                [key_pressed, timestamp, key_code] = KbCheck(-1);
+                [~, ~, key_code] = KbCheck(-1);
                 if key_code(keys.exit)
                     early_exit = true;
                     break
                 end
                 Screen('DrawTexture', window_ptr, buffer_grid);
-                if key_pressed
-                    if ~resp_made
-                        resp_code = key_code;
-                        resp_timestamp = timestamp;
-                    end
-                    resp_made = true;
-                end
-                if resp_made
-                    stim_loc.color = WhiteIndex(window_ptr);
-                else
-                    stim_loc.color = gray;
-                end
-                if timestamp < start_time_block + this_trial.stim_offset
-                    draw_stimuli(stim_loc, stim_text);
-                    vbl = Screen('Flip', window_ptr);
-                    if stim_status == 0
-                        trials_rec.stim_onset_real(trial_order) = ...
-                            vbl - start_time_block;
-                        stim_status = 1;
-                    end
-                else
-                    draw_stimuli(stim_loc);
-                    vbl = Screen('Flip', window_ptr);
-                    if stim_status == 1
-                        trials_rec.stim_offset_real(trial_order) = ...
-                            vbl - start_time_block;
-                        stim_status = 2;
-                    end
-                end
-                if vbl >= start_time_block + this_trial.trial_end - 0.5 * ifi
-                    break
-                end
-            end
-
-            % analyze user's response
-            if ~resp_made
-                resp_raw = "";
-                resp = "none";
-                resp_time = 0;
-            else
-                % use "|" as delimiter for the KeyName of "|" is "\\"
-                resp_raw = string(strjoin(cellstr(KbName(resp_code)), '|'));
-                if ~resp_code(keys.left) && ~resp_code(keys.right)
-                    resp = "neither";
-                elseif resp_code(keys.left) && resp_code(keys.right)
-                    resp = "both";
-                elseif resp_code(keys.left)
-                    resp = "left";
-                else
-                    resp = "right";
-                end
-                resp_time = resp_timestamp - start_time_block - ...
-                    trials_rec.stim_onset_real(trial_order);
-            end
-            trials_rec.resp(trial_order) = resp;
-            trials_rec.resp_raw(trial_order) = resp_raw;
-            trials_rec.acc(trial_order) = this_trial.cresp == resp;
-            trials_rec.rt(trial_order) = resp_time;
-
-            if task_config == "prac_nback"
-                while true
-                    [~, ~, key_code] = KbCheck(-1);
-                    if key_code(keys.exit)
-                        early_exit = true;
-                        break
-                    end
-                    Screen('DrawTexture', window_ptr, buffer_grid);
-                    fb_loc.coords = stim_loc.coords;
-                    fb_text.color = WhiteIndex(window_ptr);
-                    if this_trial.cresp ~= resp
-                        fb_loc.color = get_color('red');
-                        if resp == "none"
-                            fb_text.text = '?';
-                        else
-                            fb_text.text = '×';
-                        end
+                fb.loc = center;
+                fb.color = WhiteIndex(window_ptr);
+                if this_trial.cresp ~= resp
+                    fb.fill = get_color('red');
+                    if resp == "none"
+                        fb.text = '?';
                     else
-                        fb_loc.color = get_color('green');
-                        fb_text.text = '√';
+                        fb.text = '×';
                     end
-                    draw_stimuli(fb_loc, fb_text);
-                    vbl = Screen('Flip', window_ptr);
-                    if vbl >= start_time_block + this_trial.trial_end + ...
-                            timing.feedback_secs - 0.5 * ifi
-                        break
-                    end
+                else
+                    fb.fill = get_color('green');
+                    fb.text = '√';
+                end
+                draw_stimuli(fb);
+                vbl = Screen('Flip', window_ptr);
+                if vbl >= start_time_block + this_trial.trial_end + ...
+                        timing.feedback_secs - 0.5 * ifi
+                    break
                 end
             end
         end
@@ -321,16 +316,15 @@ end
             fill_rects);
     end
 
-    function draw_stimuli(loc_spec, text_spec)
-        rect = CenterRectOnPoint( ...
-            base_rect * (square_size - width_halfpen), ...
-            loc_spec.coords(1), loc_spec.coords(2));
-        % shade the rect and present digit
-        Screen('FillRect', window_ptr, loc_spec.color, ...
-            rect);
-        if nargin >= 2
-            draw_text_center_at(window_ptr, text_spec.text, ...
-                Position=loc_spec.coords, Color=text_spec.color);
+    function draw_stimuli(stims)
+        for stim = stims
+            rect = CenterRectOnPoint( ...
+                base_rect * (square_size - width_halfpen), ...
+                stim.loc(1), stim.loc(2));
+            % shade the rect and present digit
+            Screen('FillRect', window_ptr, stim.fill, rect);
+            draw_text_center_at(window_ptr, stim.text, ...
+                Position=stim.loc, Color=stim.color);
         end
     end
 end
