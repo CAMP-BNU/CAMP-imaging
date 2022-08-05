@@ -105,16 +105,15 @@ try
     % TODO: add instruction for practice
 
     % wait for start
-    while true && task_config == "test"
-        [~, ~, key_code] = KbCheck(-1);
-        if key_code(keys.exit)
-            early_exit = true;
-            break
-        end
+    while ~early_exit && task_config == "test"
         draw_text_center_at(window_ptr, '请稍候...');
         vbl = Screen('Flip', window_ptr);
         if vbl >= start_time + timing.wait_start_secs - 0.5 * ifi
             break
+        end
+        [~, ~, key_code] = KbCheck(-1);
+        if key_code(keys.exit)
+            early_exit = true;
         end
     end
     for block_order = 1:height(config)
@@ -135,12 +134,7 @@ try
                 error('exp:start:invalid_task_name', ...
                     'Invalid game name! "nback" and "manip" are supported!')
         end
-        while true
-            [~, ~, key_code] = KbCheck(-1);
-            if key_code(keys.exit)
-                early_exit = true;
-                break
-            end
+        while ~early_exit
             draw_text_center_at(window_ptr, stim_type_name, ...
                 Position=[center(1), center(2) - 0.06 * RectHeight(window_rect)], ...
                 Color=get_color('dark orange'));
@@ -153,6 +147,10 @@ try
             end
             if isnan(recordings.block_onset_real(block_order))
                 recordings.block_onset_real(block_order) = vbl - start_time;
+            end
+            [~, ~, key_code] = KbCheck(-1);
+            if key_code(keys.exit)
+                early_exit = true;
             end
         end
 
