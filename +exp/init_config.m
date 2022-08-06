@@ -247,17 +247,12 @@ for i_trial = 1:num_trials
     switch stim_type
         case "digit"
             cue = randsample(["加上3", "减去3"], 1);
-            while true
-                encoding_main = randsample(stims_pool, task_load);
-                switch cue
-                    case "加上3"
-                        probe_main_correct = encoding_main + 3;
-                    case "减去3"
-                        probe_main_correct = encoding_main - 3;
-                end
-                if all(ismember(probe_main_correct, stims_pool))
-                    break
-                end
+            encoding_main = randsample(setdiff(stims_pool, [1:3, 14:16]), task_load);
+            switch cue
+                case "加上3"
+                    probe_main_correct = encoding_main + 3;
+                case "减去3"
+                    probe_main_correct = encoding_main - 3;
             end
         case "space"
             cue = randsample(["顺时针", "逆时针"], 1);
