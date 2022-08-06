@@ -14,9 +14,6 @@ arguments
     id (1, 1) {mustBeInteger, mustBeNonnegative} = 0
 end
 
-stim_type = ["digit"; "space"];
-blocks_pool_nback = create_blocks_pool("nback", stim_type, [2; 4]);
-blocks_pool_manip = create_blocks_pool("manip", stim_type, [3; 6]);
 if contains(task_config, "prac")
     trials_each_block_nback = 10;
     trials_each_block_manip = 3;
@@ -26,33 +23,37 @@ if contains(task_config, "prac")
         timing.manip_blank_secs + timing.feedback_secs;
     trial_length_manip = timing.manip_encoding_secs + ...
         timing.manip_cue_secs + 2 * probe_length_manip;
-    switch task_config
-        case "prac_nback"
-            blocks = blocks_pool_nback;
-            blocks.block_length = repelem( ...
-                timing.block_cue_secs + ...
-                trial_length_nback * trials_each_block_nback, ...
-                height(blocks), 1);
-        case "prac_manip"
-            blocks = blocks_pool_manip;
-            blocks.block_length = repelem( ...
-                timing.block_cue_secs + ...
-                trial_length_manip * trials_each_block_manip, ...
-                height(blocks), 1);
-        case "prac"
-    end
-    blocks.block_onset = cumsum([0; blocks.block_length(1:end - 1)]);
-    blocks.rand_seed = repelem(-1, height(blocks))';
 else
-    rep_each_type = 4;
     trials_each_block_nback = 20;
     trials_each_block_manip = 5;
-    blocks_pool = vertcat(blocks_pool_nback, blocks_pool_manip);
-    blocks = repelem(blocks_pool, 4, 1);
+    trial_length_nback = timing.nback_stim_secs + timing.nback_blank_secs;
+    probe_length_manip = timing.manip_probe_secs + timing.manip_blank_secs;
+    trial_length_manip = timing.manip_encoding_secs + ...
+        timing.manip_cue_secs + 2 * probe_length_manip;
 end
+block_length_nback = timing.block_cue_secs + trial_length_nback * trials_each_block_nback;
+block_length_manip = timing.block_cue_secs + trial_length_manip * trials_each_block_manip;
+stim_type = ["digit"; "space"];
+blocks_pool_nback = create_blocks_pool("nback", stim_type, [2; 4], block_length_nback);
+blocks_pool_manip = create_blocks_pool("manip", stim_type, [2; 4], block_length_manip);
 
-blocks = addvars(blocks, (1:height(blocks))', ...
-    Before=1, NewVariableNames='block_id');
+switch task_config
+    case "prac_nback"
+        blocks = blocks_pool_nback;
+    case "prac_manip"
+        blocks = blocks_pool_manip;
+    case "prac"
+        blocks = vertcat(blocks_pool_nback, blocks_pool_manip);
+    case "test"
+        blocks = repelem( ...
+            vertcat(blocks_pool_nback, blocks_pool_manip), ...
+            4, 1);
+end
+if contains(task_config, "prac")
+    blocks.rand_seed = repelem(-1, height(blocks))';
+else
+    blocks.rand_seed = (1:height(blocks))';
+end
 blocks.trials = cell(height(blocks), 1);
 for i_block = 1:height(blocks)
     switch blocks.task_name(i_block)
@@ -81,10 +82,11 @@ if ismember(task_config, ["prac", "test"])
         end
         rng(id)
     end
-    config = datasample(blocks, length(blocks), Replace=false);
-else
-    config = blocks;
+    blocks = datasample(blocks, height(blocks), Replace=false);
 end
+blocks.block_onset = cumsum([0; blocks.block_length(1:end - 1)]);
+config = addvars(blocks, (1:height(blocks))', ...
+    Before=1, NewVariableNames='block_id');
     
     function init_timing_nback()
         trials.stim_onset = timing.block_cue_secs + ...
@@ -110,15 +112,18 @@ end
     end
 end
 
-function blocks_pool = create_blocks_pool(task_name, stim_type, task_load)
-[x, y, z] = ndgrid(1:length(task_name), ...
+function blocks_pool = create_blocks_pool(task_name, stim_type, task_load, block_length)
+[x, y, z, u] = ndgrid( ...
+    1:length(task_name), ...
     1:length(stim_type), ...
-    1:length(task_load));
-blocks_pool = array2table([x(:), y(:), z(:)], ...
-    'VariableNames', {'task_name', 'stim_type', 'task_load'});
+    1:length(task_load), ...
+    1:length(block_length));
+blocks_pool = array2table([x(:), y(:), z(:), u(:)], ...
+    'VariableNames', {'task_name', 'stim_type', 'task_load', 'block_length'});
 blocks_pool.task_name = task_name(blocks_pool.task_name);
 blocks_pool.stim_type = stim_type(blocks_pool.stim_type);
 blocks_pool.task_load = task_load(blocks_pool.task_load);
+blocks_pool.block_length = block_length(blocks_pool.block_length);
 end
 
 function trials = init_trials_nback(task_load, stim_type, num_trials, options)
@@ -211,7 +216,7 @@ end
 
 function trials = init_trials_manip(task_load, stim_type, num_trials, options)
 arguments
-    task_load (1, 1) {mustBeMember(task_load, [3, 6])}
+    task_load (1, 1) {mustBeMember(task_load, [2, 4])}
     stim_type {mustBeTextScalar, mustBeMember(stim_type, ["digit", "space"])}
     num_trials (1, 1) {mustBeInteger, mustBePositive}
     options.StimsPool = 1:16
