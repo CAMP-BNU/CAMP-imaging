@@ -22,20 +22,20 @@ if contains(task_config, "prac")
     probe_length_manip = timing.manip_probe_secs + ...
         timing.manip_blank_secs + timing.feedback_secs;
     trial_length_manip = timing.manip_encoding_secs + ...
-        timing.manip_cue_secs + 2 * probe_length_manip;
+        timing.manip_cue_secs + probe_length_manip;
 else
     trials_each_block_nback = 20;
     trials_each_block_manip = 5;
     trial_length_nback = timing.nback_stim_secs + timing.nback_blank_secs;
     probe_length_manip = timing.manip_probe_secs + timing.manip_blank_secs;
     trial_length_manip = timing.manip_encoding_secs + ...
-        timing.manip_cue_secs + 2 * probe_length_manip;
+        timing.manip_cue_secs + probe_length_manip;
 end
 block_length_nback = timing.block_cue_secs + trial_length_nback * trials_each_block_nback;
 block_length_manip = timing.block_cue_secs + trial_length_manip * trials_each_block_manip;
 stim_type = ["digit"; "space"];
-blocks_pool_nback = create_blocks_pool("nback", stim_type, [2; 4], block_length_nback);
-blocks_pool_manip = create_blocks_pool("manip", stim_type, [2; 4], block_length_manip);
+blocks_pool_nback = create_blocks_pool("nback", stim_type, [1; 3], block_length_nback);
+blocks_pool_manip = create_blocks_pool("manip", stim_type, [1; 3], block_length_manip);
 
 switch task_config
     case "prac_nback"
@@ -100,15 +100,14 @@ config = addvars(blocks, (1:height(blocks))', ...
             ((1:trials_each_block_manip)' - 1) * trial_length_manip;
         trials.cue_onset = trials.encoding_onset + timing.manip_encoding_secs;
         trials.probe_onset = arrayfun( ...
-            @(i) [trials.cue_onset(i) + timing.manip_cue_secs, ...
-            trials.cue_onset(i) + timing.manip_cue_secs + probe_length_manip], ...
-            (1:height(trials))', UniformOutput=false);
+            @(i) trials.cue_onset(i) + timing.manip_cue_secs, ...
+            (1:height(trials))');
         trials.probe_offset = arrayfun( ...
-            @(i) trials.probe_onset{i} + timing.manip_probe_secs, ...
-            (1:height(trials))', UniformOutput=false);
+            @(i) trials.probe_onset(i) + timing.manip_probe_secs, ...
+            (1:height(trials))');
         trials.trial_end = arrayfun( ...
-            @(i) trials.probe_offset{i} + timing.manip_blank_secs, ...
-            (1:height(trials))', UniformOutput=false);
+            @(i) trials.probe_offset(i) + timing.manip_blank_secs, ...
+            (1:height(trials))');
     end
 end
 
@@ -128,7 +127,7 @@ end
 
 function trials = init_trials_nback(task_load, stim_type, num_trials, options)
 arguments
-    task_load (1, 1) {mustBeMember(task_load, [2, 4])}
+    task_load (1, 1) {mustBeInteger, mustBePositive}
     stim_type {mustBeTextScalar, mustBeMember(stim_type, ["digit", "space"])}
     num_trials (1, 1) {mustBeInteger, mustBeGreaterThan(num_trials, task_load)}
     options.StimsPool = 1:16
@@ -216,7 +215,7 @@ end
 
 function trials = init_trials_manip(task_load, stim_type, num_trials, options)
 arguments
-    task_load (1, 1) {mustBeMember(task_load, [2, 4])}
+    task_load (1, 1) {mustBeInteger, mustBePositive}
     stim_type {mustBeTextScalar, mustBeMember(stim_type, ["digit", "space"])}
     num_trials (1, 1) {mustBeInteger, mustBePositive}
     options.StimsPool = 1:16
@@ -232,27 +231,30 @@ else
     rng(options.RandSeed)
 end
 
-cresp_pool = repelem(["left", "right"], num_trials);
+switch stim_type
+    case "digit"
+        % ensure correct answer is in [1, 16] range
+        encodings_main = allocate_stim_manip(setdiff(stims_pool, [1:3, 14:16]), task_load, num_trials);
+    case "space"
+        encodings_main = allocate_stim_manip(stims_pool, task_load, num_trials);
+end
+encodings_ctrl = allocate_stim_manip(stims_pool, task_load, num_trials);
 while true
-    cresp_order = randsample(cresp_pool, num_trials * 2);
-    if validate_consecutive(cresp_order)
+    cresps = randsample(["left"; "right"], num_trials, true);
+    if validate_consecutive(cresps)
         break
     end
 end
 
-encodings_main = cell(num_trials, 1);
-encodings_ctrl = cell(num_trials, 1);
 cues = strings(num_trials, 1);
-probes_main = cell(num_trials, 1);
-probes_ctrl = cell(num_trials, 1);
-cresps = cell(num_trials, 1);
+probes_main = nan(num_trials, 1);
+probes_ctrl = nan(num_trials, 1);
 for i_trial = 1:num_trials
-    cresp = cresp_order((i_trial - 1) * 2 + (1:2));
-    encoding_ctrl = randsample(stims_pool, task_load);
+    encoding_ctrl = encodings_ctrl{i_trial};
+    encoding_main = encodings_main{i_trial};
     switch stim_type
         case "digit"
             cue = randsample(["加上3", "减去3"], 1);
-            encoding_main = randsample(setdiff(stims_pool, [1:3, 14:16]), task_load);
             switch cue
                 case "加上3"
                     probe_main_correct = encoding_main + 3;
@@ -261,7 +263,6 @@ for i_trial = 1:num_trials
             end
         case "space"
             cue = randsample(["顺时针", "逆时针"], 1);
-            encoding_main = randsample(stims_pool, task_load);
             loc_pre = reshape(1:16, 4, 4);
             switch cue
                 case "顺时针"
@@ -273,28 +274,22 @@ for i_trial = 1:num_trials
                 @(loc) loc_pre(loc_post == loc), ...
                 encoding_main);
     end
-    probe_idx = randsample(1:task_load, 2);
+    probe_idx = randsample(1:task_load, 1);
     probe_main = probe_main_correct(probe_idx);
     probe_ctrl = encoding_ctrl(probe_idx);
-    for i_probe = 1:length(probe_idx)
-        if cresp(i_probe) ~= "left" % indicate probe is incorrect
-            this_probe = probe_main(i_probe);
-            while true
-                new_probe = randsample( ...
-                    [this_probe + 1, this_probe - 1], 1);
-                if ismember(new_probe, stims_pool)
-                    break
-                end
+    if cresps(i_trial) ~= "left" % indicate probe is incorrect
+        while true
+            new_probe = randsample( ...
+                [probe_main + 1, probe_main - 1], 1);
+            if ismember(new_probe, stims_pool)
+                break
             end
-            probe_main(i_probe) = new_probe;
         end
+        probe_main = new_probe;
     end
-    encodings_main{i_trial} = encoding_main;
-    encodings_ctrl{i_trial} = encoding_ctrl;
     cues(i_trial) = cue;
-    probes_main{i_trial} = probe_main;
-    probes_ctrl{i_trial} = probe_ctrl;
-    cresps{i_trial} = cresp;
+    probes_main(i_trial) = probe_main;
+    probes_ctrl(i_trial) = probe_ctrl;
 end
 
 switch stim_type
@@ -314,6 +309,18 @@ trials = table( ...
     "encoding_" + name_stim_ctrl, "cue", ...
     "probe_" + name_stim_main, "probe_" + name_stim_ctrl, "cresp"]);
 
+end
+
+function stim_order = allocate_stim_manip(stims_pool, task_load, num_trials)
+num_stims = task_load * num_trials;
+replacement = false;
+if num_stims > length(stims_pool)
+    warning('init_config:too_many_trials', ...
+        'Too many trials required! Stimuli will be used repeatedly now!')
+    replacement = true;
+end
+stims = randsample(stims_pool, num_stims, replacement);
+stim_order = mat2cell(reshape(stims, [num_trials, task_load]), repelem(1, num_trials));
 end
 
 function tf = validate_consecutive(seq, max_run_value)

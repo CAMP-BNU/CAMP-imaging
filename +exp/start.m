@@ -172,13 +172,13 @@ try
             case "manip"
                 trials_rec = table( ...
                     'Size', [height(cur_block_trials), 8], ...
-                    'VariableTypes', [repelem({'double'}, 2), repelem({'cell'}, 6)], ...
+                    'VariableTypes', [repelem({'double'}, 6), repelem({'string'}, 2)], ...
                     'VariableNames',  ...
                     {'encoding_onset_real', 'cue_onset_real', ...
                     'probe_onset_real', 'probe_offset_real', ...
                     'acc', 'rt', 'resp', 'resp_raw'});
         end
-        
+
         for trial_order = 1:height(cur_block_trials)
             if early_exit
                 break
@@ -193,7 +193,7 @@ try
         end
         recordings.trials_rec{block_order} = trials_rec;
     end
-    
+
 catch exception
     status = 1;
 end
@@ -250,7 +250,7 @@ end
             'text', num2str(this_trial.encoding_number{:}(i)), ...
             'color', get_color('blue')), ...
             1:cur_block.task_load);
-        
+
         % present encoding stimuli
         encoding_onset_real = nan;
         while ~early_exit
@@ -280,7 +280,7 @@ end
             if isnan(cue_onset_real)
                 cue_onset_real = vbl - start_time_block;
             end
-            if vbl >= start_time_block + this_trial.probe_onset{:}(1) - 0.5 * ifi
+            if vbl >= start_time_block + this_trial.probe_onset - 0.5 * ifi
                 break
             end
             if key_code(keys.exit)
@@ -290,31 +290,26 @@ end
         trials_rec.cue_onset_real(trial_order) = cue_onset_real;
 
         % present probes
-        for i_probe = 1:length(this_trial.probe_number{:})
-            if early_exit
-                break
-            end
-            probe = struct( ...
-                'loc', grid_coords(this_trial.probe_location{:}(i_probe), :), ...
-                'fill', gray, ...
-                'text', num2str(this_trial.probe_number{:}(i_probe)), ...
-                'color', get_color('blue'));
-            [resp_collected, timing_real] = routine_collect_response(probe, ...
-                this_trial.probe_offset{:}(i_probe), ...
-                this_trial.trial_end{:}(i_probe));
-            resp_result = analyze_response(resp_collected);
-            trials_rec.probe_onset_real{trial_order}(i_probe) = timing_real.stim_onset;
-            trials_rec.probe_offset_real{trial_order}(i_probe) = timing_real.stim_offset;
-            trials_rec.resp{trial_order}(i_probe) = resp_result.name;
-            trials_rec.resp_raw{trial_order}(i_probe) = resp_result.raw;
-            trials_rec.acc{trial_order}(i_probe) = this_trial.cresp{:}(i_probe) == resp_result.name;
-            trials_rec.rt{trial_order}(i_probe) = resp_result.time;
+        probe = struct( ...
+            'loc', grid_coords(this_trial.probe_location, :), ...
+            'fill', gray, ...
+            'text', num2str(this_trial.probe_number), ...
+            'color', get_color('blue'));
+        [resp_collected, timing_real] = routine_collect_response(probe, ...
+            this_trial.probe_offset, ...
+            this_trial.trial_end);
+        resp_result = analyze_response(resp_collected);
+        trials_rec.probe_onset_real(trial_order) = timing_real.stim_onset;
+        trials_rec.probe_offset_real(trial_order) = timing_real.stim_offset;
+        trials_rec.resp(trial_order) = resp_result.name;
+        trials_rec.resp_raw(trial_order) = resp_result.raw;
+        trials_rec.acc(trial_order) = this_trial.cresp == resp_result.name;
+        trials_rec.rt(trial_order) = resp_result.time;
 
-            if contains(task_config, "prac")
-                show_feedback(resp_result, ...
-                    this_trial.cresp{:}(i_probe), ...
-                    this_trial.trial_end{:}(i_probe))
-            end
+        if contains(task_config, "prac")
+            show_feedback(resp_result, ...
+                this_trial.cresp, ...
+                this_trial.trial_end)
         end
     end
 
@@ -453,7 +448,7 @@ end
 function draw_text_center_at(w, string, opts)
 %DRAW_TEXT_CENTER_AT Better control text position.
 %
-% Input: 
+% Input:
 %   w: Window pointer
 %   string: The text to draw. Must be scalar text.
 %   Name-value pairs:
