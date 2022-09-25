@@ -161,6 +161,11 @@ if ~isempty(exception)
 end
 
     function [resp_collected, timing_real] = routine_collect_response(trial)
+        % this might be time consumig
+        stim_pic = imread( ...
+            fullfile('stimuli', trial.stim_type, ...
+            [num2str(trial.stim), '.jpg']));
+        stim = Screen('MakeTexture', window_ptr, stim_pic);
         % present stimuli
         resp_made = false;
         resp_code = nan;
@@ -181,8 +186,7 @@ end
                 resp_made = true;
             end
             if timestamp < start_time + trial.stim_offset
-                % add stimuli
-                draw_text_center_at(window_ptr, '练习')
+                Screen('DrawTexture', window_ptr, stim)
                 vbl = Screen('Flip', window_ptr);
                 if isnan(stim_onset_real)
                     stim_onset_real = vbl - start_time;
