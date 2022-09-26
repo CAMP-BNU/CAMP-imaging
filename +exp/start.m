@@ -1,10 +1,11 @@
-function [recordings, status, exception] = start(phase, run, id)
+function [recordings, status, exception] = start(phase, run, opts)
 %START_NBACK Starts stimuli presentation for n-back test
 %   Detailed explanation goes here
 arguments
     phase {mustBeTextScalar, mustBeMember(phase, ["prac", "test"])} = "prac"
     run {mustBeInteger, mustBePositive} = 1
-    id (1, 1) {mustBeInteger, mustBeNonnegative} = 0
+    opts.id (1, 1) {mustBeInteger, mustBeNonnegative} = 0
+    opts.SaveData (1, 1) {mustBeNumericOrLogical} = true
 end
 
 import exp.init_config
@@ -50,8 +51,7 @@ keys.right = KbName('RightArrow');
 % ---- stimuli presentation ----
 try
     % open a window and set its background color as gray
-    gray = WhiteIndex(screen_to_display) / 2;
-    window_ptr = PsychImaging('OpenWindow', screen_to_display, gray);
+    [window_ptr, window_rect] = PsychImaging('OpenWindow', screen_to_display, WhiteIndex(screen_to_display));
     % disable character input and hide mouse cursor
     ListenChar(2);
     HideCursor;
@@ -59,17 +59,24 @@ try
     Screen('BlendFunction', window_ptr, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     % set default font name
     Screen('TextFont', window_ptr, 'SimHei');
+    Screen('TextSize', window_ptr, round(0.06 * RectHeight(window_rect)));
     % get inter flip interval
     ifi = Screen('GetFlipInterval', window_ptr);
+    % prepare stimuli rectangle
+    rect_size = round(0.625 * RectHeight(window_rect));
+    [center(1), center(2)] = RectCenter(window_rect);
+    base_rect = [0, 0, rect_size, rect_size];
+    stim_rect = CenterRectOnPoint(base_rect, center(1), center(2));
 
     % display welcome screen and wait for a press of 's' to start
     switch phase
         case "prac"
-            instr = '下面我们开始练习部分';
+            instr = '欢迎参与实验';
         case "test"
             instr = '下面我们进行正式测试';
     end
-    draw_text_center_at(window_ptr, instr, size=0.03);
+    % TODO: add instruction for practice
+    DrawFormattedText(window_ptr, double(instr), 'center', 'center');
     Screen('Flip', window_ptr);
     % the flag to determine if the experiment should exit early
     early_exit = false;
@@ -84,11 +91,10 @@ try
             break
         end
     end
-    % TODO: add instruction for practice
 
     % wait for start
     while ~early_exit && phase == "test"
-        draw_text_center_at(window_ptr, '请稍候...');
+        DrawFormattedText(window_ptr, double('请稍候...'), 'center', 'center');
         vbl = Screen('Flip', window_ptr);
         if vbl >= start_time + timing.wait_start_secs - 0.5 * ifi
             break
@@ -121,11 +127,11 @@ try
             show_feedback(resp_result, this_trial.cresp, this_trial.trial_end)
         end
 
-        % show fixation when next trial end cur run or enter into new block 
+        % show fixation when next trial end cur run or enter into new block
         if trial_order == height(config) || ...
                 config.block_id(trial_order + 1) ~= this_trial.block_id
             while ~early_exit
-                draw_text_center_at(window_ptr, "+")
+                DrawFormattedText(window_ptr, '+', 'center', 'center', BlackIndex(window_ptr));
                 vbl = Screen('Flip', window_ptr);
                 if vbl >= start_time + this_trial.trial_end + ...
                         timing.feedback_secs * (phase == "prac") + ...
@@ -156,15 +162,21 @@ Screen('Preference', 'SkipSyncTests', old_sync);
 Screen('Preference', 'TextRenderer', old_text_render);
 Priority(old_pri);
 
+if opts.SaveData
+    writetable(recordings, fullfile('data', ['2back-sub', num2str(opts.id), '.csv']))
+end
+
 if ~isempty(exception)
     rethrow(exception)
 end
 
     function [resp_collected, timing_real] = routine_collect_response(trial)
         % this might be time consumig
-        stim_pic = imread( ...
-            fullfile('stimuli', trial.stim_type, ...
-            [num2str(trial.stim), '.jpg']));
+        stim_file = [num2str(trial.stim), '.jpg'];
+        if phase == "prac"
+            stim_file = ['prac', stim_file];
+        end
+        stim_pic = imread(fullfile('stimuli', trial.stim_type, stim_file));
         stim = Screen('MakeTexture', window_ptr, stim_pic);
         % present stimuli
         resp_made = false;
@@ -186,7 +198,7 @@ end
                 resp_made = true;
             end
             if timestamp < start_time + trial.stim_offset
-                Screen('DrawTexture', window_ptr, stim)
+                Screen('DrawTexture', window_ptr, stim, [], stim_rect)
                 vbl = Screen('Flip', window_ptr);
                 if isnan(stim_onset_real)
                     stim_onset_real = vbl - start_time;
@@ -257,48 +269,11 @@ end
                 fb.color = get_color('green');
                 fb.text = '正确';
             end
-            draw_text_center_at(window_ptr, fb.text, Color=fb.color)
+            DrawFormattedText(window_ptr, double(fb.text), 'center', 'center', fb.color);
             vbl = Screen('Flip', window_ptr);
             if vbl >= start_time + trial_end + timing.feedback_secs - 0.5 * ifi
                 break
             end
         end
     end
-end
-
-function draw_text_center_at(w, string, opts)
-%DRAW_TEXT_CENTER_AT Better control text position.
-%
-% Input:
-%   w: Window pointer
-%   string: The text to draw. Must be scalar text.
-%   Name-value pairs:
-%       Position: the position to draw text.
-%       Color: the text color.
-%       Size: the text size.
-arguments
-    w
-    string {mustBeTextScalar}
-    opts.Position = "center"
-    opts.Color = BlackIndex(w)
-    opts.Size = 0.06
-end
-
-% DrawText only accept char type
-string = double(char(string));
-window_rect = Screen('Rect', w);
-size = opts.Size;
-color = opts.Color;
-if isequal(opts.Position, "center")
-    [x, y] = RectCenter(window_rect);
-else
-    x = opts.Position(1);
-    y = opts.Position(2);
-end
-Screen('TextSize', w, round(size * RectHeight(window_rect)));
-text_bounds = Screen('TextBounds', w, string);
-Screen('DrawText', w, string, ...
-    x - round(text_bounds(3) / 2), ...
-    y - round(text_bounds(4) / 2), ...
-    color);
 end
