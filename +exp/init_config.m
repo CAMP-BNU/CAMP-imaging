@@ -27,6 +27,7 @@ switch phase
             config = vertcat(config, cur_block); %#ok<AGROW> 
         end
     case "test"
+        config = readtable(fullfile('stimuli', 'formal_seq.csv'), "TextType", "string");
 end
 
 config.stim_onset = timing.wait_start_secs * (phase == "test") + ...
