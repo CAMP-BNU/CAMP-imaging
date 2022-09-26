@@ -13,6 +13,7 @@ resize_stimuli <- function(file, geometry = NULL) {
   img_raw <- image_read(file)
   ext_size <- with(image_info(img_raw), max(width, height))
   img_new <- img_raw |>
+    image_convert(colorspace = "gray") |>
     image_extent(geometry_area(ext_size, ext_size), color = "white") |>
     image_resize(geometry)
   outfile <- sub("stimuli-raw", "stimuli", file) |>
