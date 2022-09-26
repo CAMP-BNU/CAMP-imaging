@@ -173,9 +173,6 @@ end
     function [resp_collected, timing_real] = routine_collect_response(trial)
         % this might be time consumig
         stim_file = [num2str(trial.stim), '.jpg'];
-        if phase == "prac"
-            stim_file = ['prac', stim_file];
-        end
         stim_pic = imread(fullfile('stimuli', trial.stim_type, stim_file));
         stim = Screen('MakeTexture', window_ptr, stim_pic);
         % present stimuli

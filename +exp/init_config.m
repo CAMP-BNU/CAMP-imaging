@@ -41,7 +41,7 @@ arguments
     num_trials {mustBeInteger, mustBePositive} = 10
     task_load {mustBeInteger, mustBePositive, ...
         mustBeLessThan(task_load, num_trials)} = 2
-    opts.StimsPool = 1:5
+    opts.StimsPool = 91:95 % practice stimuli no is from 91 to 95
 end
 
 stims_pool = opts.StimsPool;
