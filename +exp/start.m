@@ -45,8 +45,8 @@ old_pri = Priority(MaxPriority(screen_to_display));
 % ---- keyboard settings ----
 keys.start = KbName('s');
 keys.exit = KbName('Escape');
-keys.left = KbName('LeftArrow');
-keys.right = KbName('RightArrow');
+keys.left = KbName('1!');
+keys.right = KbName('4$');
 
 % ---- stimuli presentation ----
 try
