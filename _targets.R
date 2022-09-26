@@ -1,4 +1,6 @@
 library(targets)
+purrr::walk(fs::dir_ls("R"), source)
+tar_option_set(packages = "magick")
 future::plan(future.callr::callr)
 list(
   tarchetypes::tar_file_read(
@@ -8,7 +10,7 @@ list(
   ),
   tar_target(
     out_names,
-    paste0(c(1:90, paste0("prac", 1:5)), ".jpg")
+    paste0(seq_along(words), ".jpg")
   ),
   tar_target(
     outputs, {
@@ -20,5 +22,22 @@ list(
     },
     format = "file",
     pattern = map(words, out_names)
+  ),
+  tarchetypes::tar_files_input(
+    raw_stimuli,
+    fs::dir_ls(
+      c(
+        "stimuli-raw/object",
+        "stimuli-raw/face",
+        "stimuli-raw/place"
+      ),
+      type = "file"
+    )
+  ),
+  tar_target(
+    result_stimuli,
+    resize_stimuli(raw_stimuli),
+    pattern = map(raw_stimuli),
+    format = "file"
   )
 )
