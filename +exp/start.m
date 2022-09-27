@@ -181,7 +181,9 @@ Screen('Preference', 'TextRenderer', old_text_render);
 Priority(old_pri);
 
 if opts.SaveData
-    writetable(recordings, fullfile('data', ['2back-sub', num2str(opts.id), '.csv']))
+    writetable(recordings, fullfile('data', ...
+        sprintf('2back-sub%03d-run%d-time%s.csv', ...
+        opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
 end
 
 if ~isempty(exception)
