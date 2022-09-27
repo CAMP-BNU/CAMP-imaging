@@ -19,9 +19,7 @@ timing = struct( ...
     'stim_secs', 2, ...
     'blank_secs', 2, ...
     'fixation_secs', struct("prac", 4, "test", 10), ...
-    'feedback_secs', 0.5, ...
-    'wait_start_secs', 4, ...
-    'wait_end_secs', 4);
+    'feedback_secs', 0.5);
 
 % ----prepare config and data recording table ----
 config = init_config(phase, timing);
@@ -95,19 +93,7 @@ try
         end
     end
 
-    % wait for start
-    while ~early_exit && phase == "test"
-        DrawFormattedText(window_ptr, double('请稍候...'), 'center', 'center');
-        vbl = Screen('Flip', window_ptr);
-        if vbl >= start_time + timing.wait_start_secs - 0.5 * ifi
-            break
-        end
-        [~, ~, key_code] = KbCheck(-1);
-        if key_code(keys.exit)
-            early_exit = true;
-        end
-    end
-
+    % main experiment
     for trial_order = 1:height(config)
         if early_exit
             break
@@ -146,21 +132,6 @@ try
                     early_exit = true;
                 end
             end
-        end
-    end
-
-    % wait for ending
-    while ~early_exit && phase == "test"
-        DrawFormattedText(window_ptr, double('本轮已完成，退出中...'), 'center', 'center');
-        vbl = Screen('Flip', window_ptr);
-        if vbl >= start_time + config.trial_end(end) + ...
-                timing.fixation_secs.(phase) + ...
-                timing.wait_end_secs - 0.5 * ifi
-            break
-        end
-        [~, ~, key_code] = KbCheck(-1);
-        if key_code(keys.exit)
-            early_exit = true;
         end
     end
 catch exception

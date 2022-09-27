@@ -30,8 +30,7 @@ switch phase
         config = readtable(fullfile('stimuli', 'formal_seq.csv'), "TextType", "string");
 end
 
-config.stim_onset = timing.wait_start_secs * (phase == "test") + ...
-    (config.block_id - 1) * block_dur + ...
+config.stim_onset = (config.block_id - 1) * block_dur + ...
     (config.trial_id - 1) * trial_dur;
 config.stim_offset = config.stim_onset + timing.stim_secs;
 config.trial_end = config.stim_offset + timing.blank_secs;
