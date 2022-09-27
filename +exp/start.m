@@ -117,7 +117,7 @@ try
 
         % give feedback when in practice
         if phase == "prac"
-            show_feedback(resp_result, this_trial.cresp, this_trial.trial_end)
+            show_feedback(this_trial, resp_result)
         end
 
         % show fixation when next trial end cur run or enter into new block
@@ -240,7 +240,7 @@ end
             'time', resp_time);
     end
 
-    function show_feedback(resp_result, cresp, trial_end)
+    function show_feedback(trial, resp_result)
         while ~early_exit
             [~, ~, key_code] = KbCheck(-1);
             if key_code(keys.exit)
@@ -248,11 +248,11 @@ end
                 break
             end
 
-            if cresp ~= resp_result.name
+            if trial.cresp ~= resp_result.name
                 fb.color = get_color('red');
                 if resp_result.name == "none"
                     fb.text = '超时';
-                elseif cresp == "none"
+                elseif trial.cresp == "none"
                     fb.text = '前两个试次不能作答';
                 else
                     fb.text = '错误';
@@ -263,7 +263,7 @@ end
             end
             DrawFormattedText(window_ptr, double(fb.text), 'center', 'center', fb.color);
             vbl = Screen('Flip', window_ptr);
-            if vbl >= start_time + trial_end + timing.feedback_secs - 0.5 * ifi
+            if vbl >= start_time + trial.trial_end + timing.feedback_secs - 0.5 * ifi
                 break
             end
         end
