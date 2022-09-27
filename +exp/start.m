@@ -24,7 +24,11 @@ timing = struct( ...
 % ----prepare config and data recording table ----
 config = init_config(phase, timing);
 config = config(config.run_id == run, :);
-recordings = config;
+rec_vars = {'stim_onset_real', 'stim_offset_real', 'acc', 'rt', 'resp', 'resp_raw'};
+rec_init = table('Size', [height(config), length(rec_vars)], ...
+    'VariableTypes', [repelem("doublenan", 4), repelem("string", 2)], ...
+    'VariableNames', rec_vars);
+recordings = horzcat(config, rec_init);
 
 % ---- configure screen and window ----
 % setup default level of 2
@@ -106,10 +110,10 @@ try
         % record response
         recordings.stim_onset_real(trial_order) = timing_real.stim_onset;
         recordings.stim_offset_real(trial_order) = timing_real.stim_offset;
-        recordings.resp(trial_order) = resp_result.name;
-        recordings.resp_raw(trial_order) = resp_result.raw;
         recordings.acc(trial_order) = this_trial.cresp == resp_result.name;
         recordings.rt(trial_order) = resp_result.time;
+        recordings.resp(trial_order) = resp_result.name;
+        recordings.resp_raw(trial_order) = resp_result.raw;
 
         % give feedback when in practice
         if phase == "prac"
