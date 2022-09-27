@@ -2,12 +2,12 @@ function config = init_config(phase, timing)
 %INIT_CONFIG Initializing configurations for all tasks
 
 arguments
-    phase {mustBeTextScalar, mustBeMember(phase, ["prac", "test"])}
+    phase {mustBeTextScalar, mustBeMember(phase, ["prac", "test", "post"])}
     timing struct
 end
 
 trials_each_block = 10;
-trial_dur = timing.stim_secs + timing.blank_secs + ...
+trial_dur = timing.stim_secs.(phase) + timing.blank_secs.(phase) + ...
     timing.feedback_secs * (phase == "prac"); % feedback when practice
 block_dur = trial_dur * trials_each_block + ...
     timing.fixation_secs.(phase); % fixation when test
@@ -28,12 +28,13 @@ switch phase
         end
     case "test"
         config = readtable(fullfile('stimuli', 'formal_seq.csv'), "TextType", "string");
+    case "post"
 end
 
 config.stim_onset = (config.block_id - 1) * block_dur + ...
     (config.trial_id - 1) * trial_dur;
-config.stim_offset = config.stim_onset + timing.stim_secs;
-config.trial_end = config.stim_offset + timing.blank_secs;
+config.stim_offset = config.stim_onset + timing.stim_secs.(phase);
+config.trial_end = config.stim_offset + timing.blank_secs.(phase);
 end
 
 function trials = init_trials(num_trials, task_load, opts)
@@ -65,9 +66,9 @@ while ~cond_okay
         if cond_order(i) == "filler"
             cresp_order(i) = "none";
         elseif ismember(cond_order(i), ["lure", "diff"])
-            cresp_order(i) = "right";
+            cresp_order(i) = "diff";
         else
-            cresp_order(i) = "left";
+            cresp_order(i) = "same";
         end
     end
     % lure/same trials cannot directly follow lure trials
