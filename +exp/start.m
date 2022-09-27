@@ -69,15 +69,17 @@ try
     base_rect = [0, 0, rect_size, rect_size];
     stim_rect = CenterRectOnPoint(base_rect, center(1), center(2));
 
-    % display welcome screen and wait for a press of 's' to start
+    % display welcome/instr screen and wait for a press of 's' to start
     switch phase
         case "prac"
-            instr = '欢迎参与实验';
+            [instr, ~, intsr_alpha] = imread(fullfile('image', 'instr.png'));
+            instr(:, :, 4) = intsr_alpha;
+            instr_tex = Screen('MakeTexture', window_ptr, instr);
+            Screen('DrawTexture', window_ptr, instr_tex, [], window_rect)
         case "test"
             instr = '下面我们进行正式测试';
+            DrawFormattedText(window_ptr, double(instr), 'center', 'center');
     end
-    % TODO: add instruction for practice
-    DrawFormattedText(window_ptr, double(instr), 'center', 'center');
     Screen('Flip', window_ptr);
     % the flag to determine if the experiment should exit early
     early_exit = false;
