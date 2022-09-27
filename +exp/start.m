@@ -157,8 +157,8 @@ Priority(old_pri);
 
 if opts.SaveData
     writetable(recordings, fullfile('data', ...
-        sprintf('2back-sub%03d-run%d-time%s.csv', ...
-        opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
+        sprintf('2back-phase_%s-sub_%03d-run_%d-time_%s.csv', ...
+        phase, opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
 end
 
 if ~isempty(exception)
