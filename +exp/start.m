@@ -128,8 +128,9 @@ try
         end
 
         % show fixation when next trial end cur run or enter into new block
-        if trial_order == height(config) || ...
-                config.block_id(trial_order + 1) ~= this_trial.block_id
+        if phase ~= "post" && ...
+                (trial_order == height(config) || ...
+                config.block_id(trial_order + 1) ~= this_trial.block_id)
             while ~early_exit
                 DrawFormattedText(window_ptr, '+', 'center', 'center', BlackIndex(window_ptr));
                 vbl = Screen('Flip', window_ptr);
@@ -184,9 +185,17 @@ end
         % present stimuli
         resp_made = false;
         resp_code = nan;
-        stim_onset_real = nan;
-        stim_offset_real = nan;
+        stim_onset_stamp = nan;
+        stim_offset_stamp = nan;
         resp_timestamp = nan;
+        if phase == "post"
+            start_time_trial = GetSecs;
+            stim_offset = start_time_trial + timing.stim_secs.(phase);
+            trial_end = stim_offset + timing.blank_secs.(phase);
+        else
+            stim_offset = start_time + trial.stim_offset;
+            trial_end = start_time + trial.trial_end;
+        end
         while ~early_exit
             [key_pressed, timestamp, key_code] = KbCheck(-1);
             if key_code(keys.exit)
@@ -200,29 +209,33 @@ end
                 end
                 resp_made = true;
             end
-            if timestamp < start_time + trial.stim_offset
+            if (phase ~= "post" && timestamp < stim_offset) || ...
+                (phase == "post" && ~resp_made && timestamp < stim_offset)
                 Screen('DrawTexture', window_ptr, stim, [], stim_rect)
                 vbl = Screen('Flip', window_ptr);
-                if isnan(stim_onset_real)
-                    stim_onset_real = vbl - start_time;
+                if isnan(stim_onset_stamp)
+                    stim_onset_stamp = vbl;
                 end
             else
                 vbl = Screen('Flip', window_ptr);
-                if isnan(stim_offset_real)
-                    stim_offset_real = vbl - start_time;
+                if isnan(stim_offset_stamp)
+                    stim_offset_stamp = vbl;
+                    if phase == "post" && resp_made
+                        trial_end = stim_offset_stamp + timing.blank_secs.(phase);
+                    end
                 end
             end
-            if vbl >= start_time + trial.trial_end - 0.5 * ifi
+            if vbl >= trial_end - 0.5 * ifi
                 break
             end
         end
         resp_collected = struct( ...
             'made', resp_made, ...
             'code', resp_code, ...
-            'time', resp_timestamp - start_time - stim_onset_real);
+            'time', resp_timestamp - stim_onset_stamp);
         timing_real = struct( ...
-            'stim_onset', stim_onset_real, ...
-            'stim_offset', stim_offset_real);
+            'stim_onset', stim_onset_stamp - start_time, ...
+            'stim_offset', stim_offset_stamp - start_time);
     end
 
     function resp_result = analyze_response(resp_collected)
