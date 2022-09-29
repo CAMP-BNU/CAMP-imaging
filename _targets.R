@@ -45,21 +45,14 @@ list(
     )
   ),
   seq_post = list(
-    tar_target(
-      seq_post_no_sim,
-      generate_seq_no_sim()
-    ),
-    tar_target(
-      seq_post_sim,
-      generate_seq_sim()
+    tarchetypes::tar_file_read(
+      seq_2back,
+      "stimuli/seq_2back.csv",
+      read = read_csv(!!.x, show_col_types = FALSE)
     ),
     tar_target(
       seq_post,
-      bind_rows(
-        seq_post_no_sim,
-        seq_post_sim,
-        .id = "run_id"
-      )
+      generate_seq(seq_2back)
     ),
     tar_target(
       file_seq_post,
