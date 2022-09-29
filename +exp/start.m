@@ -2,7 +2,7 @@ function [recordings, status, exception] = start(phase, run, opts)
 %START_NBACK Starts stimuli presentation for n-back test
 %   Detailed explanation goes here
 arguments
-    phase {mustBeTextScalar, mustBeMember(phase, ["prac", "test"])} = "prac"
+    phase {mustBeTextScalar, mustBeMember(phase, ["prac", "test", "post"])} = "prac"
     run {mustBeInteger, mustBePositive} = 1
     opts.id (1, 1) {mustBeInteger, mustBeNonnegative} = 0
     opts.SaveData (1, 1) {mustBeNumericOrLogical} = true
@@ -16,9 +16,9 @@ exception = [];
 
 % ---- set experiment timing parameters (predefined here, all in secs) ----
 timing = struct( ...
-    'stim_secs', 2, ...
-    'blank_secs', 2, ...
-    'fixation_secs', struct("prac", 4, "test", 10), ...
+    'stim_secs', struct("prac", 2, "test", 2, "post", 4), ...
+    'blank_secs', struct("prac", 2, "test", 2, "post", 0.5), ...
+    'fixation_secs', struct("prac", 4, "test", 10, "post", 0), ...
     'feedback_secs', 0.5);
 
 % ----prepare config and data recording table ----
@@ -46,10 +46,14 @@ old_pri = Priority(MaxPriority(screen_to_display));
 % PsychDebugWindowConfiguration([], 0.1);
 
 % ---- keyboard settings ----
-keys.start = KbName('s');
-keys.exit = KbName('Escape');
-keys.left = KbName('1!');
-keys.right = KbName('4$');
+keys = struct( ...
+    'start', KbName('s'), ...
+    'exit', KbName('Escape'), ...
+    'same', KbName('1!'), ...
+    'diff', KbName('4$'), ...
+    'old', KbName('f'), ...
+    'similar', KbName('g'), ...
+    'new', KbName('j'));
 
 % ---- stimuli presentation ----
 try
@@ -81,6 +85,9 @@ try
         case "test"
             instr = '下面我们进行正式测试';
             DrawFormattedText(window_ptr, double(instr), 'center', 'center');
+        case "post"
+            instr = '下面我们进行记忆再认测试';
+            DrawFormattedText(window_ptr, double(instr), 'center', 'center');
     end
     Screen('Flip', window_ptr);
     % the flag to determine if the experiment should exit early
@@ -104,7 +111,7 @@ try
         end
         this_trial = config(trial_order, :);
         % basic routine
-        [resp_collected, timing_real] = routine_collect_response(this_trial);
+        [resp_collected, timing_real] = collect_response(this_trial);
         resp_result = analyze_response(resp_collected);
 
         % record response
@@ -121,8 +128,9 @@ try
         end
 
         % show fixation when next trial end cur run or enter into new block
-        if trial_order == height(config) || ...
-                config.block_id(trial_order + 1) ~= this_trial.block_id
+        if phase ~= "post" && ...
+                (trial_order == height(config) || ...
+                config.block_id(trial_order + 1) ~= this_trial.block_id)
             while ~early_exit
                 DrawFormattedText(window_ptr, '+', 'center', 'center', BlackIndex(window_ptr));
                 vbl = Screen('Flip', window_ptr);
@@ -165,17 +173,29 @@ if ~isempty(exception)
     rethrow(exception)
 end
 
-    function [resp_collected, timing_real] = routine_collect_response(trial)
+    function [resp_collected, timing_real] = collect_response(trial)
         % this might be time consumig
-        stim_file = [num2str(trial.stim), '.jpg'];
+        if trial.cresp ~= "similar"
+            stim_file = [num2str(trial.stim), '.jpg'];
+        else % use the similar copy
+            stim_file = [num2str(trial.stim), 'b.jpg'];
+        end
         stim_pic = imread(fullfile('stimuli', trial.stim_type, stim_file));
         stim = Screen('MakeTexture', window_ptr, stim_pic);
         % present stimuli
         resp_made = false;
         resp_code = nan;
-        stim_onset_real = nan;
-        stim_offset_real = nan;
+        stim_onset_stamp = nan;
+        stim_offset_stamp = nan;
         resp_timestamp = nan;
+        if phase == "post"
+            start_time_trial = GetSecs;
+            stim_offset = start_time_trial + timing.stim_secs.(phase);
+            trial_end = stim_offset + timing.blank_secs.(phase);
+        else
+            stim_offset = start_time + trial.stim_offset;
+            trial_end = start_time + trial.trial_end;
+        end
         while ~early_exit
             [key_pressed, timestamp, key_code] = KbCheck(-1);
             if key_code(keys.exit)
@@ -189,29 +209,33 @@ end
                 end
                 resp_made = true;
             end
-            if timestamp < start_time + trial.stim_offset
+            if (phase ~= "post" && timestamp < stim_offset) || ...
+                (phase == "post" && ~resp_made && timestamp < stim_offset)
                 Screen('DrawTexture', window_ptr, stim, [], stim_rect)
                 vbl = Screen('Flip', window_ptr);
-                if isnan(stim_onset_real)
-                    stim_onset_real = vbl - start_time;
+                if isnan(stim_onset_stamp)
+                    stim_onset_stamp = vbl;
                 end
             else
                 vbl = Screen('Flip', window_ptr);
-                if isnan(stim_offset_real)
-                    stim_offset_real = vbl - start_time;
+                if isnan(stim_offset_stamp)
+                    stim_offset_stamp = vbl;
+                    if phase == "post" && resp_made
+                        trial_end = stim_offset_stamp + timing.blank_secs.(phase);
+                    end
                 end
             end
-            if vbl >= start_time + trial.trial_end - 0.5 * ifi
+            if vbl >= trial_end - 0.5 * ifi
                 break
             end
         end
         resp_collected = struct( ...
             'made', resp_made, ...
             'code', resp_code, ...
-            'time', resp_timestamp - start_time - stim_onset_real );
+            'time', resp_timestamp - stim_onset_stamp);
         timing_real = struct( ...
-            'stim_onset', stim_onset_real, ...
-            'stim_offset', stim_offset_real);
+            'stim_onset', stim_onset_stamp - start_time, ...
+            'stim_offset', stim_offset_stamp - start_time);
     end
 
     function resp_result = analyze_response(resp_collected)
@@ -223,14 +247,16 @@ end
             % use "|" as delimiter for the KeyName of "|" is "\\"
             resp_code = resp_collected.code;
             resp_raw = string(strjoin(cellstr(KbName(resp_code)), '|'));
-            if ~resp_code(keys.left) && ~resp_code(keys.right)
-                resp_name = "neither";
-            elseif resp_code(keys.left) && resp_code(keys.right)
-                resp_name = "both";
-            elseif resp_code(keys.left)
-                resp_name = "left";
+            if phase ~= "post"
+                valid_names = {'same', 'diff'};
             else
-                resp_name = "right";
+                valid_names = {'old', 'similar', 'new'};
+            end
+            valid_codes = cellfun(@(x) keys.(x), valid_names);
+            if sum(resp_code) > 1 || (~any(resp_code(valid_codes)))
+                resp_name = "invalid";
+            else
+                resp_name = valid_names{valid_codes == find(resp_code)};
             end
             resp_time = resp_collected.time;
         end
