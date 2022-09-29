@@ -18,7 +18,8 @@ generate_seq <- function(seq) {
       filter(stim_type %in% c("object", "place")),
     new = old |>
       count(stim_type) |>
-      mutate(stim = map(n, ~ seq(36, length.out = .))) |>
+      # there are 45 unique stimuli in 2-back
+      mutate(stim = map(n, ~ seq(46L, length.out = .))) |>
       unnest(stim) |>
       select(-n),
     .id = "cresp"
@@ -53,7 +54,7 @@ generate_seq <- function(seq) {
 }
 
 validate <- function(seq) {
-  # similar before old: exact 22 for object, exact 23 for place
+  # balance similar before old
   counts <- seq |>
     filter(cresp %in% c("old", "similar")) |>
     mutate(order = row_number()) |>
@@ -62,8 +63,8 @@ validate <- function(seq) {
     count(stim_type, seq_type)
   valid_sim_old <- with(
     counts,
-    n[stim_type == "object" & seq_type == "sim_pre"] == 22L &&
-      n[stim_type == "place" & seq_type == "sim_pre"] == 23L
+    n[stim_type == "object" & seq_type == "sim_pre"] == 18L &&
+      n[stim_type == "place" & seq_type == "sim_pre"] == 18L
   )
   if (!valid_sim_old) {
     return(FALSE)
