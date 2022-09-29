@@ -1,4 +1,4 @@
-function [recordings, status, exception] = start(phase, run, opts)
+function [recordings, status, exception] = start_task(phase, run, opts)
 %START_NBACK Starts stimuli presentation for n-back test
 %   Detailed explanation goes here
 arguments
