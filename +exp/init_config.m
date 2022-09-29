@@ -7,7 +7,7 @@ arguments
 end
 
 if phase ~= "post"
-    trials_each_block = 10;
+    trials_each_block = 11;
     trial_dur = timing.stim_secs.(phase) + timing.blank_secs.(phase) + ...
         timing.feedback_secs * (phase == "prac"); % feedback when practice
     block_dur = trial_dur * trials_each_block + ...
