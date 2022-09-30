@@ -1,56 +1,40 @@
 #' Generate Sequence for Tasks without Similar Response
 #'
 #' @title generate_seq
-#' @param seq The formal sequence.
 #' @return
 #' @author Liang Zhang
 #' @export
-generate_seq <- function(seq) {
+generate_seq_post <- function() {
   set.seed(1)
-  old <- seq |>
-    group_by(stim_type, stim) |>
-    filter(n() == 2) |>
-    ungroup() |>
-    distinct(stim_type, stim)
+  stim_types <- c("word", "object", "place", "face")
   stim_pool <- bind_rows(
-    old = old,
-    similar = old |>
-      filter(stim_type %in% c("object", "place")),
-    new = old |>
-      count(stim_type) |>
-      # there are 45 unique stimuli in 2-back
-      mutate(stim = map(n, ~ seq(46L, length.out = .))) |>
-      unnest(stim) |>
-      select(-n),
-    .id = "cresp"
+    expand_grid(
+      stim = 1:45,
+      stim_type = stim_types,
+      cresp = c("old", "similar")
+    ),
+    expand_grid(
+      stim = 46:90,
+      stim_type = stim_types,
+      cresp = "new"
+    )
   )
-  # no similar
-  repeat {
-    seq_post_no_sim <- stim_pool |>
-      filter(stim_type %in% c("face", "word")) |>
-      slice_sample(prop = 1L)
-    if (all(rle(seq_post_no_sim$cresp)$lengths <= 5L)) {
-      break
-    }
-  }
   # with similar
   repeat {
-    seq_post_sim <- stim_pool |>
-      filter(stim_type %in% c("object", "place")) |>
-      slice_sample(prop = 1L)
-    if (validate(seq_post_sim)) {
+    seq_post <- slice_sample(stim_pool, prop = 1L)
+    if (validate(seq_post)) {
       break
     }
   }
-  bind_rows(
-    seq_post_no_sim,
-    seq_post_sim,
-    .id = "run_id"
-  ) |>
-    group_by(run_id) |>
-    mutate(trial_id = row_number()) |>
-    ungroup() |>
-    select(run_id, trial_id, stim_type, stim, cresp)
+  n_block <- 2L
+  seq_post |>
+    add_column(run_id = 1L, .before = 1L) |>
+    # cut into two blocks
+    mutate(
+      block_id = rep(seq_len(n_block), each = n() / n_block),
+      trial_id = rep(seq_len(n() / n_block), times = n_block),
+      .after = run_id
+    )
 }
 
 validate <- function(seq) {
@@ -61,22 +45,20 @@ validate <- function(seq) {
     pivot_wider(names_from = cresp, values_from = order) |>
     mutate(seq_type = if_else(similar > old, "sim_pre", "sim_rear")) |>
     count(stim_type, seq_type)
-  valid_sim_old <- with(
-    counts,
-    n[stim_type == "object" & seq_type == "sim_pre"] == 18L &&
-      n[stim_type == "place" & seq_type == "sim_pre"] == 18L
-  )
-  if (!valid_sim_old) {
+  # looks very hacky :(
+  # valid_sim_old <- with(
+  #   counts,
+  #   n[stim_type == "object" & seq_type == "sim_pre"] == 22L &&
+  #     n[stim_type == "place" & seq_type == "sim_pre"] == 23L &&
+  #     n[stim_type == "face" & seq_type == "sim_pre"] == 22L &&
+  #     n[stim_type == "word" & seq_type == "sim_pre"] == 23L
+  # )
+  if (!all(counts$n %in% c(22L, 23L))) {
     return(FALSE)
   }
   # similar images do not come continuously
-  rle_id <- seq |>
-    mutate(stim_id = str_c(stim_type, stim)) |>
-    pull(stim_id) |>
-    rle()
-  valid_no_rep_id <- all(rle_id$lengths == 1L)
-  if (!valid_no_rep_id) {
+  if (!all(with(seq, rle(str_c(stim_type, stim)))$lengths == 1L)) {
     return(FALSE)
   }
-  all(rle(seq$cresp)$lengths <= 5L)
+  return(TRUE)
 }
