@@ -1,4 +1,6 @@
-# Develop version
+# 0.0.4
+
+* Enhance stimuli quality: remove watermark and enhance resolution.
 
 # 0.0.3
 
