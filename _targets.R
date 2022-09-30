@@ -41,14 +41,9 @@ list(
     )
   ),
   seq_post = list(
-    tarchetypes::tar_file_read(
-      seq_2back,
-      "stimuli/seq_2back.csv",
-      read = read_csv(!!.x, show_col_types = FALSE)
-    ),
     tar_target(
       seq_post,
-      generate_seq(seq_2back)
+      generate_seq_post()
     ),
     tar_target(
       file_seq_post,
