@@ -6,37 +6,33 @@ arguments
     timing struct
 end
 
-if phase ~= "post"
-    trials_each_block = 11;
-    trial_dur = timing.stim_secs.(phase) + timing.blank_secs.(phase) + ...
-        timing.feedback_secs * (phase == "prac"); % feedback when practice
-    block_dur = trial_dur * trials_each_block + ...
-        timing.fixation_secs.(phase); % fixation when test
-    switch phase
-        case "prac"
-            rng('shuffle')
-            stim_types = ["word", "object", "place", "face"];
-            config = table;
-            for i_block = 1:length(stim_types)
-                cur_block = addvars( ...
-                    init_trials(trials_each_block), ...
-                    ones(trials_each_block, 1), ... % run_id
-                    i_block * ones(trials_each_block, 1), ... % block_id
-                    repmat(stim_types(i_block), trials_each_block, 1), ... % stim_type
-                    'NewVariableNames', {'run_id', 'block_id', 'stim_type'}, ...
-                    'Before', 1);
-                config = vertcat(config, cur_block); %#ok<AGROW>
-            end
-        case "test"
-            config = readtable(fullfile('stimuli', 'seq_2back.csv'), "TextType", "string");
-    end
-    config.stim_onset = (config.block_id - 1) * block_dur + ...
-        (config.trial_id - 1) * trial_dur;
-    config.stim_offset = config.stim_onset + timing.stim_secs.(phase);
-    config.trial_end = config.stim_offset + timing.blank_secs.(phase);
-else
-    config = readtable(fullfile('stimuli', 'seq_post.csv'), "TextType", "string");
+trials_each_block = 11;
+trial_dur = timing.stim_secs + timing.blank_secs + ...
+    timing.feedback_secs * (phase == "prac"); % feedback when practice
+block_dur = trial_dur * trials_each_block + ...
+    timing.fixation_secs.(phase); % fixation when test
+switch phase
+    case "prac"
+        rng('shuffle')
+        stim_types = ["word", "object", "place", "face"];
+        config = table;
+        for i_block = 1:length(stim_types)
+            cur_block = addvars( ...
+                init_trials(trials_each_block), ...
+                ones(trials_each_block, 1), ... % run_id
+                i_block * ones(trials_each_block, 1), ... % block_id
+                repmat(stim_types(i_block), trials_each_block, 1), ... % stim_type
+                'NewVariableNames', {'run_id', 'block_id', 'stim_type'}, ...
+                'Before', 1);
+            config = vertcat(config, cur_block); %#ok<AGROW>
+        end
+    case "test"
+        config = readtable(fullfile('stimuli', 'seq_2back.csv'), "TextType", "string");
 end
+config.stim_onset = (config.block_id - 1) * block_dur + ...
+    (config.trial_id - 1) * trial_dur;
+config.stim_offset = config.stim_onset + timing.stim_secs;
+config.trial_end = config.stim_offset + timing.blank_secs;
 end
 
 function trials = init_trials(num_trials, task_load, opts)
