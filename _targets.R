@@ -4,25 +4,21 @@ tar_option_set(packages = c("magick", "tidyverse"))
 future::plan(future.callr::callr)
 list(
   words = list(
-    tarchetypes::tar_file_read(
-      words,
-      "stimuli-raw/words.txt",
-      read = readr::read_lines(!!.x)
+    tar_target(
+      file_words,
+      "stimuli-raw/words.csv",
+      format = "file"
+    ),
+    tarchetypes::tar_group_size(
+      config_words,
+      read_csv(file_words, show_col_types = FALSE),
+      size = 1L
     ),
     tar_target(
-      out_names,
-      paste0(seq_along(words), ".jpg")
-    ),
-    tar_target(
-      outputs, {
-        filename <- fs::path("stimuli", "word", out_names)
-        jpeg(filename, width = 480, height = 480)
-        gplots::textplot(words)
-        dev.off()
-        filename
-      },
+      file_word_pic,
+      generate_word_pic(config_words),
       format = "file",
-      pattern = map(words, out_names)
+      pattern = map(config_words)
     )
   ),
   images = list(
