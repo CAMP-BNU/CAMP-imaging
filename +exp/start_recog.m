@@ -77,7 +77,7 @@ try
     early_exit = false;
     % here we should detect for a key press and release
     while true
-        [resp_timestamp, key_code] = KbStrokeWait(-1);
+        [~, key_code] = KbStrokeWait(-1);
         if key_code(keys.start)
             break
         elseif key_code(keys.exit)
@@ -121,7 +121,7 @@ try
                 'center', 'center', BlackIndex(window_ptr));
             Screen('Flip', window_ptr);
             while ~early_exit
-                [resp_timestamp, key_code] = KbStrokeWait(-1);
+                [~, key_code] = KbStrokeWait(-1);
                 if key_code(keys.start)
                     break
                 elseif key_code(keys.exit)
@@ -167,21 +167,24 @@ end
         end
         stim_pic = imread(fullfile('stimuli', trial.stim_type, stim_file));
         stim = Screen('MakeTexture', window_ptr, stim_pic);
+
         % present stimuli
         resp_made = false;
         resp_code = nan;
         stim_onset_stamp = nan;
-        stim_offset_stamp = nan;
         resp_timestamp = nan;
         start_time_trial = GetSecs;
-        stim_offset = start_time_trial + timing.stim_secs;
-        trial_end = stim_offset + timing.blank_secs;
         while ~early_exit
+            Screen('DrawTexture', window_ptr, stim, [], stim_rect);
+            vbl = Screen('Flip', window_ptr);
+            if isnan(stim_onset_stamp)
+                stim_onset_stamp = vbl;
+            end
             [key_pressed, timestamp, key_code] = KbCheck(-1);
             if key_code(keys.exit)
                 early_exit = true;
                 break
-            end
+            end 
             if key_pressed
                 if ~resp_made
                     resp_code = key_code;
@@ -189,23 +192,22 @@ end
                 end
                 resp_made = true;
             end
-            if ~resp_made && timestamp < stim_offset
-                Screen('DrawTexture', window_ptr, stim, [], stim_rect)
-                vbl = Screen('Flip', window_ptr);
-                if isnan(stim_onset_stamp)
-                    stim_onset_stamp = vbl;
-                end
-            else
-                vbl = Screen('Flip', window_ptr);
-                if isnan(stim_offset_stamp)
-                    stim_offset_stamp = vbl;
-                    if resp_made
-                        trial_end = stim_offset_stamp + timing.blank_secs;
-                    end
-                end
-            end
-            if vbl >= trial_end - 0.5 * ifi
+            if resp_made || ...
+                    vbl >= start_time_trial + timing.stim_secs - 0.5 * ifi
+                stim_offset_stamp = vbl;
                 break
+            end
+        end
+
+        % inter trial interval: blank screen
+        while ~early_exit
+            vbl = Screen('Flip', window_ptr);
+            if vbl >= stim_offset_stamp + timing.blank_secs - 0.5 * ifi
+                break
+            end
+            [~, ~, key_code] = KbCheck(-1);
+            if key_code(keys.exit)
+                early_exit = true;
             end
         end
         resp_collected = struct( ...
