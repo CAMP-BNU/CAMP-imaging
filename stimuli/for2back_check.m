@@ -17,14 +17,14 @@ for block = 0:block_num-1
              %   targetType{i,2}  = 'left';
              if sum(samimageSeq == i-2)
                  targetType{i,1}  = 'same';
-                 targetType{i,2}  = 'left';
+                 targetType{i,2}  = 'same';
              else
                  targetType{i,1}  = 'lure';
-                 targetType{i,2}  = 'right';
+                 targetType{i,2}  = 'diff';
             end
         else
             targetType{i,1}  = 'diff';
-            targetType{i,2}  = 'right';
+            targetType{i,2}  = 'diff';
         end
     end
 end
