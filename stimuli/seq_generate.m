@@ -68,4 +68,4 @@ targetType = for2back_check(stim);
 cond = targetType(:,1);
 cresp = targetType(:,2);
 formal_seq_10_12 = table(run_id,block_id,stim_type,trial_id,stim,cond,cresp);
-writetable(formal_seq_10_12,'formal_seq_10_12.csv');
+writetable(formal_seq_10_12,'seq_2back.csv');
