@@ -28,28 +28,28 @@ end
 for i = 1:9
     seqMat_formal(:,i) = seqMat(cateMat(:,i),i);
 end
-stim = zeros(36*11,1);
+stim = zeros(36*12,1);
 for seq = 1:9
     append_num = (seq-1)*5;
     for category = 1:4
-        current_seq_range = (((seq-1)*4+category-1)*11+1:((seq-1)*4+category)*11);
-        stim(current_seq_range) = eval(seqMat_formal{category,seq})+append_num;
+        current_seq_range = (((seq-1)*4+category-1)*12+1:((seq-1)*4+category)*12);
+        stim(current_seq_range(1:11)) = eval(seqMat_formal{category,seq})+append_num;
     end
 end
-run_id = [ones(12*11,1);2*ones(12*11,1);3*ones(12*11,1)];
-block_id = zeros(36*11,1);
+run_id = [ones(12*12,1);2*ones(12*12,1);3*ones(12*12,1)];
+block_id = zeros(36*12,1);
 for run=1:3
     for block = 1:12
-        current_seq_range = ((run-1)*12+block-1)*11+1:((run-1)*12+block)*11;
-        block_id(current_seq_range) = block*ones(11,1);
+        current_seq_range = ((run-1)*12+block-1)*12+1:((run-1)*12+block)*12;
+        block_id(current_seq_range) = block*ones(12,1);
     end
 end
-stim_type = cell(36*11,1);
-trial_id = zeros(36*11,1);
+stim_type = cell(36*12,1);
+trial_id = zeros(36*12,1);
 for seq = 1:9
     for category = 1:4
-        for trial = 1:11
-            current_seq = ((seq-1)*4+category-1)*11+trial;
+        for trial = 1:12
+            current_seq = ((seq-1)*4+category-1)*12+trial;
             trial_id(current_seq) = trial;
             switch cateMat(category,seq)
                 case 1
