@@ -104,9 +104,35 @@ try
             break
         end
         this_trial = config(trial_order, :);
-        % basic routine
-        [resp_collected, timing_real] = collect_response(this_trial);
-        resp_result = analyze_response(resp_collected);
+        
+        if this_trial.cond == "rest"
+            stim_onset_stamp = nan;
+            while ~early_exit
+                DrawFormattedText(window_ptr, '+', 'center', 'center', BlackIndex(window_ptr));
+                vbl = Screen('Flip', window_ptr);
+                if vbl >= start_time + this_trial.trial_end - 0.5 * ifi
+                    break
+                end
+                if isnan(stim_onset_stamp)
+                    stim_onset_stamp = vbl;
+                end
+                [~, ~, key_code] = KbCheck(-1);
+                if key_code(keys.exit)
+                    early_exit = true;
+                end
+            end
+            timing_real = struct( ...
+                'stim_onset', stim_onset_stamp - start_time, ...
+                'stim_offset', nan);
+            resp_result = struct( ...
+                'time', nan, ...
+                'name', "none", ...
+                'raw', "");
+        else
+            % basic routine
+            [resp_collected, timing_real] = collect_response(this_trial);
+            resp_result = analyze_response(resp_collected);
+        end
 
         % record response
         recordings.stim_onset_real(trial_order) = timing_real.stim_onset;
@@ -117,27 +143,10 @@ try
         recordings.resp_raw(trial_order) = resp_result.raw;
 
         % give feedback when in practice
-        if phase == "prac"
+        if this_trial.cond ~= "rest" && phase == "prac"
             show_feedback(this_trial, resp_result)
         end
 
-        % show fixation when next trial end cur run or enter into new block
-        if trial_order == height(config) || ...
-                config.block_id(trial_order + 1) ~= this_trial.block_id
-            while ~early_exit
-                DrawFormattedText(window_ptr, '+', 'center', 'center', BlackIndex(window_ptr));
-                vbl = Screen('Flip', window_ptr);
-                if vbl >= start_time + this_trial.trial_end + ...
-                        timing.feedback_secs * (phase == "prac") + ...
-                        timing.fixation_secs.(phase) - 0.5 * ifi
-                    break
-                end
-                [~, ~, key_code] = KbCheck(-1);
-                if key_code(keys.exit)
-                    early_exit = true;
-                end
-            end
-        end
     end
 catch exception
     status = 1;
