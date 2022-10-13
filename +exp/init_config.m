@@ -19,9 +19,9 @@ switch phase
         for i_block = 1:length(stim_types)
             cur_block = addvars( ...
                 init_trials(trials_each_block), ...
-                ones(trials_each_block, 1), ... % run_id
-                i_block * ones(trials_each_block, 1), ... % block_id
-                repmat(stim_types(i_block), trials_each_block, 1), ... % stim_type
+                ones(trials_each_block + 1, 1), ... % run_id
+                i_block * ones(trials_each_block + 1, 1), ... % block_id
+                repmat(stim_types(i_block), trials_each_block + 1, 1), ... % stim_type
                 'NewVariableNames', {'run_id', 'block_id', 'stim_type'}, ...
                 'Before', 1);
             config = vertcat(config, cur_block); %#ok<AGROW>
@@ -33,6 +33,9 @@ config.stim_onset = (config.block_id - 1) * block_dur + ...
     (config.trial_id - 1) * trial_dur;
 config.stim_offset = config.stim_onset + timing.stim_secs;
 config.trial_end = config.stim_offset + timing.blank_secs;
+config.stim_offset(config.cond == "rest") = nan;
+config.trial_end(config.cond == "rest") = ...
+    config.stim_onset(config.cond == "rest") + timing.fixation_secs.(phase);
 end
 
 function trials = init_trials(num_trials, task_load, opts)
@@ -41,9 +44,11 @@ arguments
     task_load {mustBeInteger, mustBePositive, ...
         mustBeLessThan(task_load, num_trials)} = 2
     opts.StimsPool = 91:95 % practice stimuli no is from 91 to 95
+    opts.AppendRest {mustBeNumericOrLogical} = true;
 end
 
 stims_pool = opts.StimsPool;
+append_rest = opts.AppendRest;
 
 n_filler = task_load;
 n_same = fix((num_trials - task_load) / 2);
@@ -101,6 +106,11 @@ trials = table( ...
     (1:num_trials)', order_stim', ...
     cond_order', cresp_order', ...
     VariableNames=["trial_id", "stim", "cond", "cresp"]);
+if append_rest
+    rest_trial = table(12, 0, "rest", "none", ...
+        VariableNames=["trial_id", "stim", "cond", "cresp"]);
+    trials = vertcat(trials, rest_trial);
+end
 end
 
 function tf = validate_consecutive(seq, max_run_value)
