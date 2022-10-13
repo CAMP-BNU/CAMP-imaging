@@ -1,5 +1,7 @@
 # Develop Version
 
+* Add `"rest"` condition to two-back sequence file (#8).
+
 # 0.0.4
 
 * Enhance stimuli quality: remove watermark and enhance resolution.
