@@ -1,6 +1,7 @@
 # Develop Version
 
 * Add `"rest"` condition to two-back sequence file (#8).
+* Add `exp.start_fixation()` for fixation display during resting or structure imaging phases.
 
 # 0.0.4
 
