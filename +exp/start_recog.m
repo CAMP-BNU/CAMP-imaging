@@ -4,6 +4,7 @@ function [recordings, status, exception] = start_recog(opts)
 arguments
     opts.id (1, 1) {mustBeInteger, mustBeNonnegative} = 0
     opts.SaveData (1, 1) {mustBeNumericOrLogical} = true
+    opts.SkipSyncTests (1, 1) {mustBeNumericOrLogical} = false
 end
 
 import exp.init_config
@@ -34,7 +35,7 @@ screen_to_display = max(Screen('Screens'));
 % set the start up screen to black
 old_visdb = Screen('Preference', 'VisualDebugLevel', 1);
 % do not skip synchronization test to make sure timing is accurate
-old_sync = Screen('Preference', 'SkipSyncTests', 0);
+old_sync = Screen('Preference', 'SkipSyncTests', double(opts.SkipSyncTests));
 % use FTGL text plugin
 old_text_render = Screen('Preference', 'TextRenderer', 1);
 % set priority to the top
