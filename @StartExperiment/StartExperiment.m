@@ -7,6 +7,8 @@ classdef StartExperiment < matlab.apps.AppBase
         menu_create_user        matlab.ui.container.Menu
         menu_load_user          matlab.ui.container.Menu
         Menu_2                  matlab.ui.container.Menu
+        menu_upload_data        matlab.ui.container.Menu
+        menu_copy_data          matlab.ui.container.Menu
         Panel                   matlab.ui.container.Panel
         set_fix_dur             matlab.ui.control.NumericEditField
         Label_10                matlab.ui.control.Label
@@ -425,6 +427,30 @@ classdef StartExperiment < matlab.apps.AppBase
             end
             delete(app)
         end
+
+        % Menu selected function: menu_copy_data
+        function menu_copy_dataSelected(app, event)
+            dest = uigetdir();
+            if dest == 0 
+                return
+            end
+            if strcmp(dest, pwd)
+                uialert(app.UIFigure, '不能拷贝到软件的运行目录，已取消拷贝', ...
+                    '目录问题', 'Icon', 'warning')
+                return
+            end
+            outfile = fullfile(dest, ...
+                sprintf('wm-fmri-%s.zip', ...
+                datetime("now", "Format", "yyyyMMdd_HHmmss")));
+            try
+                zip(outfile, {'.db', 'data'})
+                uialert(app.UIFigure, sprintf('已将数据拷贝至%s', outfile), ...
+                    '拷贝成功', 'Icon', 'success')
+            catch exception
+                uialert(app.UIFigure, getReport(exception), ...
+                        '拷贝出错', 'Interpreter', 'html');
+            end
+        end
     end
 
     % Component initialization
@@ -459,6 +485,15 @@ classdef StartExperiment < matlab.apps.AppBase
             % Create Menu_2
             app.Menu_2 = uimenu(app.UIFigure);
             app.Menu_2.Text = '数据';
+
+            % Create menu_upload_data
+            app.menu_upload_data = uimenu(app.Menu_2);
+            app.menu_upload_data.Text = '上传';
+
+            % Create menu_copy_data
+            app.menu_copy_data = uimenu(app.Menu_2);
+            app.menu_copy_data.MenuSelectedFcn = createCallbackFcn(app, @menu_copy_dataSelected, true);
+            app.menu_copy_data.Text = '拷贝至...';
 
             % Create panel_user
             app.panel_user = uipanel(app.UIFigure);
