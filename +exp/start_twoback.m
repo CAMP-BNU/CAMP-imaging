@@ -1,4 +1,4 @@
-function [recordings, status, exception] = start_twoback(phase, run, opts)
+function [status, exception, recordings] = start_twoback(phase, run, opts)
 %START_NBACK Starts stimuli presentation for n-back test
 %   Detailed explanation goes here
 arguments
@@ -55,6 +55,8 @@ keys = struct( ...
 
 % ---- stimuli presentation ----
 try
+    % the flag to determine if the experiment should exit early
+    early_exit = false;
     % open a window and set its background color as gray
     [window_ptr, window_rect] = PsychImaging('OpenWindow', screen_to_display, WhiteIndex(screen_to_display));
     % disable character input and hide mouse cursor
@@ -85,17 +87,14 @@ try
             DrawFormattedText(window_ptr, double(instr), 'center', 'center');
     end
     Screen('Flip', window_ptr);
-    % the flag to determine if the experiment should exit early
-    early_exit = false;
     % here we should detect for a key press and release
-    while true
+    while ~early_exit
         [resp_timestamp, key_code] = KbStrokeWait(-1);
         if key_code(keys.start)
             start_time = resp_timestamp;
             break
         elseif key_code(keys.exit)
             early_exit = true;
-            break
         end
     end
 
@@ -153,6 +152,10 @@ catch exception
     status = 1;
 end
 
+if early_exit
+    status = 2;
+end
+
 % --- post presentation jobs
 Screen('Close');
 sca;
@@ -170,10 +173,6 @@ if opts.SaveData
     writetable(recordings, fullfile('data', ...
         sprintf('2back-phase_%s-sub_%03d-run_%d-time_%s.csv', ...
         phase, opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
-end
-
-if ~isempty(exception)
-    rethrow(exception)
 end
 
     function [resp_collected, timing_real] = collect_response(trial)

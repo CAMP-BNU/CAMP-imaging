@@ -1,4 +1,4 @@
-function [recordings, status, exception] = start_recog(opts)
+function [status, exception, recordings] = start_recog(opts)
 %START_NBACK Starts stimuli presentation for n-back test
 %   Detailed explanation goes here
 arguments
@@ -52,6 +52,8 @@ keys = struct( ...
 
 % ---- stimuli presentation ----
 try
+    % the flag to determine if the experiment should exit early
+    early_exit = false;
     % open a window and set its background color as gray
     [window_ptr, window_rect] = PsychImaging('OpenWindow', screen_to_display, WhiteIndex(screen_to_display));
     % disable character input and hide mouse cursor
@@ -74,16 +76,13 @@ try
     instr = '下面我们进行记忆再认测试';
     DrawFormattedText(window_ptr, double(instr), 'center', 'center');
     Screen('Flip', window_ptr);
-    % the flag to determine if the experiment should exit early
-    early_exit = false;
     % here we should detect for a key press and release
-    while true
+    while ~early_exit
         [~, key_code] = KbStrokeWait(-1);
         if key_code(keys.start)
             break
         elseif key_code(keys.exit)
             early_exit = true;
-            break
         end
     end
 
@@ -136,6 +135,10 @@ catch exception
     status = 1;
 end
 
+if early_exit
+    status = 2;
+end
+
 % --- post presentation jobs
 Screen('Close');
 sca;
@@ -153,10 +156,6 @@ if opts.SaveData
     writetable(recordings, fullfile('data', ...
         sprintf('recog-sub_%03d-time_%s.csv', ...
         opts.id, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
-end
-
-if ~isempty(exception)
-    rethrow(exception)
 end
 
     function resp_collected = collect_response(trial)

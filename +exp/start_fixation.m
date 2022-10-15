@@ -32,6 +32,8 @@ keys = struct( ...
     'exit', KbName('Escape'));
 
 try
+    % the flag to determine if the experiment should exit early
+    early_exit = false;
     % open a window and set its background color as gray
     [window_ptr, window_rect] = PsychImaging('OpenWindow', screen_to_display, WhiteIndex(screen_to_display));
     % disable character input and hide mouse cursor
@@ -44,12 +46,10 @@ try
     Screen('TextSize', window_ptr, round(0.06 * RectHeight(window_rect)));
     % get inter flip interval
     ifi = Screen('GetFlipInterval', window_ptr);
-
     % display instruction
     DrawFormattedText(window_ptr, double(opts.Instruction), 'center', 'center');
     Screen('Flip', window_ptr);
-    % the flag to determine if the experiment should exit early
-    early_exit = false;
+    
     % here we should detect for a key press and release
     while ~early_exit
         [resp_timestamp, key_code] = KbStrokeWait(-1);
@@ -75,6 +75,10 @@ try
     end
 catch exception
     status = 1;
+end
+
+if early_exit
+    status = 2;
 end
 
 % --- post presentation jobs
