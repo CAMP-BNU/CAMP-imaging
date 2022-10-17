@@ -97,7 +97,7 @@ try
         % open movie
         movie = Screen('OpenMovie', window_ptr, movie_names{trial_order});
         % Start playback engine:
-        Screen('PlayMovie', movie, 1, 0, 0);
+        Screen('PlayMovie', movie, 1, 0, 1);
 
         % to speed things up, open next movie
         if trial_order < height(config)
