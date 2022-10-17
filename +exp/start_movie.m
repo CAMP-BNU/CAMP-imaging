@@ -1,4 +1,4 @@
-function [recordings, status, exception] = start_movie(run, opts)
+function [status, exception, recordings] = start_movie(run, opts)
 %START_MOVIE Start movie playing
 
 arguments
@@ -161,6 +161,10 @@ catch exception
     status = 1;
 end
 
+if early_exit
+    status = 2;
+end
+
 % --- post presentation jobs
 Screen('CloseAll');
 sca;
@@ -178,7 +182,4 @@ writetable(recordings, fullfile('data', ...
     sprintf('movie-sub_%03d-run_%d-time_%s.csv', ...
     opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
 
-if ~isempty(exception)
-    rethrow(exception)
-end
 end
