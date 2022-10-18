@@ -1,4 +1,4 @@
-function [recordings, status, exception] = start_twoback(phase, run, opts)
+function [status, exception, recordings] = start_twoback(phase, run, opts)
 %START_NBACK Starts stimuli presentation for n-back test
 %   Detailed explanation goes here
 arguments
@@ -6,6 +6,7 @@ arguments
     run {mustBeInteger, mustBePositive} = 1
     opts.id (1, 1) {mustBeInteger, mustBeNonnegative} = 0
     opts.SaveData (1, 1) {mustBeNumericOrLogical} = true
+    opts.SkipSyncTests (1, 1) {mustBeNumericOrLogical} = false
 end
 
 import exp.init_config
@@ -38,7 +39,7 @@ screen_to_display = max(Screen('Screens'));
 % set the start up screen to black
 old_visdb = Screen('Preference', 'VisualDebugLevel', 1);
 % do not skip synchronization test to make sure timing is accurate
-old_sync = Screen('Preference', 'SkipSyncTests', 0);
+old_sync = Screen('Preference', 'SkipSyncTests', double(opts.SkipSyncTests));
 % use FTGL text plugin
 old_text_render = Screen('Preference', 'TextRenderer', 1);
 % set priority to the top
@@ -54,6 +55,8 @@ keys = struct( ...
 
 % ---- stimuli presentation ----
 try
+    % the flag to determine if the experiment should exit early
+    early_exit = false;
     % open a window and set its background color as gray
     [window_ptr, window_rect] = PsychImaging('OpenWindow', screen_to_display, WhiteIndex(screen_to_display));
     % disable character input and hide mouse cursor
@@ -84,17 +87,14 @@ try
             DrawFormattedText(window_ptr, double(instr), 'center', 'center');
     end
     Screen('Flip', window_ptr);
-    % the flag to determine if the experiment should exit early
-    early_exit = false;
     % here we should detect for a key press and release
-    while true
+    while ~early_exit
         [resp_timestamp, key_code] = KbStrokeWait(-1);
         if key_code(keys.start)
             start_time = resp_timestamp;
             break
         elseif key_code(keys.exit)
             early_exit = true;
-            break
         end
     end
 
@@ -104,9 +104,35 @@ try
             break
         end
         this_trial = config(trial_order, :);
-        % basic routine
-        [resp_collected, timing_real] = collect_response(this_trial);
-        resp_result = analyze_response(resp_collected);
+        
+        if this_trial.cond == "rest"
+            stim_onset_stamp = nan;
+            while ~early_exit
+                DrawFormattedText(window_ptr, '+', 'center', 'center', BlackIndex(window_ptr));
+                vbl = Screen('Flip', window_ptr);
+                if vbl >= start_time + this_trial.trial_end - 0.5 * ifi
+                    break
+                end
+                if isnan(stim_onset_stamp)
+                    stim_onset_stamp = vbl;
+                end
+                [~, ~, key_code] = KbCheck(-1);
+                if key_code(keys.exit)
+                    early_exit = true;
+                end
+            end
+            timing_real = struct( ...
+                'stim_onset', stim_onset_stamp - start_time, ...
+                'stim_offset', nan);
+            resp_result = struct( ...
+                'time', nan, ...
+                'name', "none", ...
+                'raw', "");
+        else
+            % basic routine
+            [resp_collected, timing_real] = collect_response(this_trial);
+            resp_result = analyze_response(resp_collected);
+        end
 
         % record response
         recordings.stim_onset_real(trial_order) = timing_real.stim_onset;
@@ -117,30 +143,17 @@ try
         recordings.resp_raw(trial_order) = resp_result.raw;
 
         % give feedback when in practice
-        if phase == "prac"
+        if this_trial.cond ~= "rest" && phase == "prac"
             show_feedback(this_trial, resp_result)
         end
 
-        % show fixation when next trial end cur run or enter into new block
-        if trial_order == height(config) || ...
-                config.block_id(trial_order + 1) ~= this_trial.block_id
-            while ~early_exit
-                DrawFormattedText(window_ptr, '+', 'center', 'center', BlackIndex(window_ptr));
-                vbl = Screen('Flip', window_ptr);
-                if vbl >= start_time + this_trial.trial_end + ...
-                        timing.feedback_secs * (phase == "prac") + ...
-                        timing.fixation_secs.(phase) - 0.5 * ifi
-                    break
-                end
-                [~, ~, key_code] = KbCheck(-1);
-                if key_code(keys.exit)
-                    early_exit = true;
-                end
-            end
-        end
     end
 catch exception
     status = 1;
+end
+
+if early_exit
+    status = 2;
 end
 
 % --- post presentation jobs
@@ -160,10 +173,6 @@ if opts.SaveData
     writetable(recordings, fullfile('data', ...
         sprintf('2back-phase_%s-sub_%03d-run_%d-time_%s.csv', ...
         phase, opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
-end
-
-if ~isempty(exception)
-    rethrow(exception)
 end
 
     function [resp_collected, timing_real] = collect_response(trial)

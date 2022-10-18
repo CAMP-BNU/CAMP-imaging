@@ -1,9 +1,10 @@
-function [recordings, status, exception] = start_movie(run, opts)
+function [status, exception, recordings] = start_movie(run, opts)
 %START_MOVIE Start movie playing
 
 arguments
     run {mustBeInteger, mustBePositive} = 1
     opts.id {mustBeInteger, mustBeNonnegative} = 0
+    opts.SkipSyncTests (1, 1) {mustBeNumericOrLogical} = false
 end
 
 % ---- set default error related outputs ----
@@ -34,7 +35,7 @@ screen_to_display = max(Screen('Screens'));
 % set the start up screen to black
 old_visdb = Screen('Preference', 'VisualDebugLevel', 1);
 % do not skip synchronization test to make sure timing is accurate
-old_sync = Screen('Preference', 'SkipSyncTests', 0);
+old_sync = Screen('Preference', 'SkipSyncTests', double(opts.SkipSyncTests));
 % use FTGL text plugin
 old_text_render = Screen('Preference', 'TextRenderer', 1);
 % set priority to the top
@@ -96,7 +97,7 @@ try
         % open movie
         movie = Screen('OpenMovie', window_ptr, movie_names{trial_order});
         % Start playback engine:
-        Screen('PlayMovie', movie, 1, 0, 0);
+        Screen('PlayMovie', movie, 1, 0, 1);
 
         % to speed things up, open next movie
         if trial_order < height(config)
@@ -160,6 +161,10 @@ catch exception
     status = 1;
 end
 
+if early_exit
+    status = 2;
+end
+
 % --- post presentation jobs
 Screen('CloseAll');
 sca;
@@ -177,7 +182,4 @@ writetable(recordings, fullfile('data', ...
     sprintf('movie-sub_%03d-run_%d-time_%s.csv', ...
     opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
 
-if ~isempty(exception)
-    rethrow(exception)
-end
 end
