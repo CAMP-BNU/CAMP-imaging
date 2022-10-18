@@ -1,4 +1,7 @@
-# Developing Version
+# 0.1.1
+
+* Fix practice face images.
+* Skip sync tests in practice phase.
 
 # 0.1.0
 
