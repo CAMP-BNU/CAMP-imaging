@@ -13,7 +13,7 @@ classdef StartPractice < matlab.apps.AppBase
 
         % Button pushed function: Button
         function ButtonPushed(app, event)
-            [status, exception, recordings] = exp.start_twoback("prac", "SkipSyncTests", false, "SaveData", false);
+            [status, exception, recordings] = exp.start_twoback("prac", "SkipSyncTests", true, "SaveData", false);
             if status ~= 0
                 if status == 2
                     uialert(app.UIFigure, '用户提前退出了，将不更新正确率', ...
