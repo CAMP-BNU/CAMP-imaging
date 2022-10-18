@@ -1,4 +1,4 @@
-# Develop Version
+# 0.1.0
 
 * Add `"rest"` condition to two-back sequence file ([#8](https://github.com/psychelzh/wm-fmri/issues/8)).
 * Add `exp.start_fixation()` for fixation display during resting or structure imaging phases.
