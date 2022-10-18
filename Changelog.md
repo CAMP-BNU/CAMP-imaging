@@ -1,3 +1,5 @@
+# Developing Version
+
 # 0.1.0
 
 * Add `"rest"` condition to two-back sequence file ([#8](https://github.com/psychelzh/wm-fmri/issues/8)).
