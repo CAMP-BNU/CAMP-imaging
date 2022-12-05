@@ -1,5 +1,7 @@
 # Developing Version
 
+* [Feature] Support new 6 point post recognition test ([#12](https://github.com/psychelzh/wm-fmri/issues/12)).
+
 # 0.1.1
 
 * Fix practice face images.
