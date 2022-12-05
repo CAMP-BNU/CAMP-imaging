@@ -43,12 +43,16 @@ old_pri = Priority(MaxPriority(screen_to_display));
 % PsychDebugWindowConfiguration([], 0.1);
 
 % ---- keyboard settings ----
-keys = struct( ...
+keys = dictionary( ...
     'start', KbName('s'), ...
     'exit', KbName('Escape'), ...
-    'old', KbName('f'), ...
-    'similar', KbName('g'), ...
-    'new', KbName('j'));
+    '1', KbName('1!'), ... % definitely old
+    '2', KbName('2@'), ... % old
+    '3', KbName('3#'), ... % sort of old
+    '4', KbName('4$'), ... % sort of new
+    '5', KbName('5%'), ... % new
+    '6', KbName('6^') ...  % definitely new
+    );
 
 % ---- stimuli presentation ----
 try
@@ -79,9 +83,9 @@ try
     % here we should detect for a key press and release
     while ~early_exit
         [~, key_code] = KbStrokeWait(-1);
-        if key_code(keys.start)
+        if key_code(keys('start'))
             break
-        elseif key_code(keys.exit)
+        elseif key_code(keys('exit'))
             early_exit = true;
         end
     end
@@ -97,7 +101,12 @@ try
         resp_result = analyze_response(resp_collected);
 
         % record response
-        recordings.acc(trial_order) = this_trial.cresp == resp_result.name;
+        if this_trial.cresp == "new"
+            acc = ismember(resp_result.name, ["4", "5", "6"]);
+        else
+            acc = ismember(resp_result.name, ["1", "2", "3"]);
+        end
+        recordings.acc(trial_order) = acc;
         recordings.rt(trial_order) = resp_result.time;
         recordings.resp(trial_order) = resp_result.name;
         recordings.resp_raw(trial_order) = resp_result.raw;
@@ -110,7 +119,7 @@ try
             start_time_rest = Screen('Flip', window_ptr);
             while ~early_exit
                 [~, timestamp, key_code] = KbCheck(-1);
-                if key_code(keys.exit)
+                if key_code(keys('exit'))
                     early_exit = true;
                 end
                 if timestamp > start_time_rest + timing.rest_secs - 0.5 * ifi
@@ -122,9 +131,9 @@ try
             Screen('Flip', window_ptr);
             while ~early_exit
                 [~, key_code] = KbStrokeWait(-1);
-                if key_code(keys.start)
+                if key_code(keys('start'))
                     break
-                elseif key_code(keys.exit)
+                elseif key_code(keys('exit'))
                     early_exit = true;
                     break
                 end
@@ -181,7 +190,7 @@ end
                 stim_onset_stamp = vbl;
             end
             [key_pressed, timestamp, key_code] = KbCheck(-1);
-            if key_code(keys.exit)
+            if key_code(keys('exit'))
                 early_exit = true;
                 break
             end 
@@ -206,7 +215,7 @@ end
                 break
             end
             [~, ~, key_code] = KbCheck(-1);
-            if key_code(keys.exit)
+            if key_code(keys('exit'))
                 early_exit = true;
             end
         end
@@ -225,8 +234,8 @@ end
             % use "|" as delimiter for the KeyName of "|" is "\\"
             resp_code = resp_collected.code;
             resp_raw = string(strjoin(cellstr(KbName(resp_code)), '|'));
-            valid_names = {'old', 'similar', 'new'};
-            valid_codes = cellfun(@(x) keys.(x), valid_names);
+            valid_names = {'1', '2', '3', '4', '5', '6'};
+            valid_codes = cellfun(@(x) keys(x), valid_names);
             if sum(resp_code) > 1 || (~any(resp_code(valid_codes)))
                 resp_name = "invalid";
             else
