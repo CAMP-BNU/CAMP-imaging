@@ -53,6 +53,13 @@ classdef LoadUser < matlab.apps.AppBase
 
         % Button pushed function: Button_2
         function Button_2Pushed(app, event)
+            app.calling_app.panel_user.Enable = "on";
+            delete(app)
+        end
+
+        % Close request function: UIFigure
+        function UIFigureCloseRequest(app, event)
+            app.calling_app.panel_user.Enable = "on";
             delete(app)
         end
     end
@@ -67,6 +74,7 @@ classdef LoadUser < matlab.apps.AppBase
             app.UIFigure = uifigure('Visible', 'off');
             app.UIFigure.Position = [100 100 500 400];
             app.UIFigure.Name = 'MATLAB App';
+            app.UIFigure.CloseRequestFcn = createCallbackFcn(app, @UIFigureCloseRequest, true);
 
             % Create UITable
             app.UITable = uitable(app.UIFigure);
