@@ -171,7 +171,8 @@ classdef StartExperiment < matlab.apps.AppBase
             if exist(app.user_file, "file")
                 opts = detectImportOptions(app.user_file);
                 % make sure name and sex is read as string
-                opts.VariableTypes(2:3) = {'string', 'string'};
+                text_cols = ismember(opts.VariableNames, ["name", "sex"]);
+                opts.VariableTypes(text_cols) = {'string', 'string'};
                 app.users_history = readtable(app.user_file, opts);
             else
                 app.users_history = table();
