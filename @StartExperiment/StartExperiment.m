@@ -242,19 +242,30 @@ classdef StartExperiment < matlab.apps.AppBase
             else
                 is_completed = status == 0;
             end
-            if ~is_completed
-                component.BackgroundColor = "red";
-                if ~isempty(exception)
-                    uialert(app.UIFigure, getReport(exception), ...
-                        '出错了', 'Interpreter', 'html');
-                end
-            else
-                component.BackgroundColor = "green";
+            app.report_status(is_completed, exception, component)
+            if is_completed
                 component.Enable = "off";
                 if exist("extra", "var")
                     extra.Enable = "off";
                 end
                 app.proceed_next()
+            end
+        end
+
+        function report_status(app, status, exception, component)
+            if status ~= 0
+                if isempty(exception)
+                    component.BackgroundColor = "yellow";
+                    if status == 2
+                        component.Tooltip = "最近一次运行提前退出";
+                    end
+                else
+                    component.BackgroundColor = "red";
+                    uialert(app.UIFigure, getReport(exception), ...
+                        '出错了', 'Interpreter', 'html');
+                end
+            else
+                component.BackgroundColor = "green";
             end
         end
 
@@ -408,15 +419,7 @@ classdef StartExperiment < matlab.apps.AppBase
         % Button pushed function: start_fixation
         function start_fixationButtonPushed(app, event)
             [status, exception] = exp.start_fixation("Duration", app.set_fix_dur.Value, "SkipSyncTests", app.skip_sync_tests);
-            if status ~= 0
-                event.Source.BackgroundColor = "red";
-            else
-                event.Source.BackgroundColor = "green";
-            end
-            if ~isempty(exception)
-                uialert(app.UIFigure, getReport(exception), ...
-                    '出错了', 'Interpreter', 'html');
-            end
+            app.report_status(status, exception, event.Source)
         end
 
         % Close request function: UIFigure
