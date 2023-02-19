@@ -169,7 +169,10 @@ classdef StartExperiment < matlab.apps.AppBase
                 app.progress_history = table();
             end
             if exist(app.user_file, "file")
-                app.users_history = readtable(app.user_file, "TextType", "string");
+                opts = detectImportOptions(app.user_file);
+                % make sure name and sex is read as string
+                opts.VariableTypes(2:3) = {'string', 'string'};
+                app.users_history = readtable(app.user_file, opts);
             else
                 app.users_history = table();
             end
