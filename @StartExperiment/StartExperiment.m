@@ -229,6 +229,22 @@ classdef StartExperiment < matlab.apps.AppBase
             app.project_progress = 0;
             app.("panel_" + app.project_names(app.project_active)).Enable = "on";
         end
+
+        function display_stimuli(app, event)
+            proj_name_active = app.project_names(app.project_active);
+            extra = [];
+            if contains(proj_name_active, "resting")
+                [status, exception] = exp.start_fixation("Duration", 7.5, "SkipSyncTests", app.skip_sync_tests);
+            elseif contains(proj_name_active, "movie")
+                [status, exception] = exp.start_movie(app.project_progress + 1, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
+            elseif contains(proj_name_active, "task")
+                [status, exception] = exp.start_twoback("test", app.project_progress + 1, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
+            elseif matches(proj_name_active, regexpPattern("struct|dti"))
+                extra = app.(sprintf('set_%s_dur', proj_name_active));
+                [status, exception] = exp.start_fixation("Duration", extra.Value, "SkipSyncTests", app.skip_sync_tests);
+            end
+            app.check_progress(status, exception, event.Source, extra)
+        end
         
         function check_progress(app, status, exception, component, extra)
             if status == 2
@@ -242,10 +258,10 @@ classdef StartExperiment < matlab.apps.AppBase
             else
                 is_completed = status == 0;
             end
-            app.report_status(is_completed, exception, component)
+            app.report_status(status, exception, component)
             if is_completed
                 component.Enable = "off";
-                if exist("extra", "var")
+                if exist("extra", "var") && ~isempty(extra)
                     extra.Enable = "off";
                 end
                 app.proceed_next()
@@ -338,82 +354,10 @@ classdef StartExperiment < matlab.apps.AppBase
             end
         end
 
-        % Button pushed function: resting1_run1
-        function resting1_run1ButtonPushed(app, event)
-            [status, exception] = exp.start_fixation("Duration", 7.5, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: resting1_run2
-        function resting1_run2ButtonPushed(app, event)
-            [status, exception] = exp.start_fixation("Duration", 7.5, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: movie_run1
-        function movie_run1ButtonPushed(app, event)
-            [status, exception] = exp.start_movie(1, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: movie_run2
-        function movie_run2ButtonPushed(app, event)
-            [status, exception] = exp.start_movie(2, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: movie_run3
-        function movie_run3ButtonPushed(app, event)
-            [status, exception] = exp.start_movie(3, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: movie_run4
-        function movie_run4ButtonPushed(app, event)
-            [status, exception] = exp.start_movie(4, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: start_struct
-        function start_structButtonPushed(app, event)
-            [status, exception] = exp.start_fixation("Duration", app.set_struct_dur.Value, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source, app.set_struct_dur)
-        end
-
-        % Button pushed function: resting2_run1
-        function resting2_run1ButtonPushed(app, event)
-            [status, exception] = exp.start_fixation("Duration", 7.5, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: resting2_run2
-        function resting2_run2ButtonPushed(app, event)
-            [status, exception] = exp.start_fixation("Duration", 7.5, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: task_run1
-        function task_run1ButtonPushed(app, event)
-            [status, exception] = exp.start_twoback("test", 1, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: task_run2
-        function task_run2ButtonPushed(app, event)
-            [status, exception] = exp.start_twoback("test", 2, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: task_run3
-        function task_run3ButtonPushed(app, event)
-            [status, exception] = exp.start_twoback("test", 3, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source)
-        end
-
-        % Button pushed function: start_dti
-        function start_dtiButtonPushed(app, event)
-            [status, exception] = exp.start_fixation("Duration", app.set_dti_dur.Value, "SkipSyncTests", app.skip_sync_tests);
-            app.check_progress(status, exception, event.Source, app.set_dti_dur)
+        % Button pushed function: movie_run1, movie_run2, movie_run3, 
+        % ...and 10 other components
+        function projectStartButtonPushed(app, event)
+            app.display_stimuli(event)
         end
 
         % Button pushed function: start_fixation
@@ -593,7 +537,7 @@ classdef StartExperiment < matlab.apps.AppBase
 
             % Create start_struct
             app.start_struct = uibutton(app.panel_struct, 'push');
-            app.start_struct.ButtonPushedFcn = createCallbackFcn(app, @start_structButtonPushed, true);
+            app.start_struct.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.start_struct.Position = [84 45 100 23];
             app.start_struct.Text = '开始';
 
@@ -607,25 +551,25 @@ classdef StartExperiment < matlab.apps.AppBase
 
             % Create movie_run4
             app.movie_run4 = uibutton(app.panel_movie, 'push');
-            app.movie_run4.ButtonPushedFcn = createCallbackFcn(app, @movie_run4ButtonPushed, true);
+            app.movie_run4.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.movie_run4.Position = [144 28 66 23];
             app.movie_run4.Text = '第四轮';
 
             % Create movie_run3
             app.movie_run3 = uibutton(app.panel_movie, 'push');
-            app.movie_run3.ButtonPushedFcn = createCallbackFcn(app, @movie_run3ButtonPushed, true);
+            app.movie_run3.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.movie_run3.Position = [45 28 66 23];
             app.movie_run3.Text = '第三轮';
 
             % Create movie_run2
             app.movie_run2 = uibutton(app.panel_movie, 'push');
-            app.movie_run2.ButtonPushedFcn = createCallbackFcn(app, @movie_run2ButtonPushed, true);
+            app.movie_run2.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.movie_run2.Position = [144 70 66 23];
             app.movie_run2.Text = '第二轮';
 
             % Create movie_run1
             app.movie_run1 = uibutton(app.panel_movie, 'push');
-            app.movie_run1.ButtonPushedFcn = createCallbackFcn(app, @movie_run1ButtonPushed, true);
+            app.movie_run1.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.movie_run1.Position = [45 70 66 23];
             app.movie_run1.Text = '第一轮';
 
@@ -639,13 +583,13 @@ classdef StartExperiment < matlab.apps.AppBase
 
             % Create resting1_run2
             app.resting1_run2 = uibutton(app.panel_resting1, 'push');
-            app.resting1_run2.ButtonPushedFcn = createCallbackFcn(app, @resting1_run2ButtonPushed, true);
+            app.resting1_run2.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.resting1_run2.Position = [145 20 66 23];
             app.resting1_run2.Text = '第二轮';
 
             % Create resting1_run1
             app.resting1_run1 = uibutton(app.panel_resting1, 'push');
-            app.resting1_run1.ButtonPushedFcn = createCallbackFcn(app, @resting1_run1ButtonPushed, true);
+            app.resting1_run1.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.resting1_run1.Position = [46 20 66 23];
             app.resting1_run1.Text = '第一轮';
 
@@ -674,7 +618,7 @@ classdef StartExperiment < matlab.apps.AppBase
 
             % Create start_dti
             app.start_dti = uibutton(app.panel_dti, 'push');
-            app.start_dti.ButtonPushedFcn = createCallbackFcn(app, @start_dtiButtonPushed, true);
+            app.start_dti.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.start_dti.Position = [83 35 100 23];
             app.start_dti.Text = '开始';
 
@@ -688,19 +632,19 @@ classdef StartExperiment < matlab.apps.AppBase
 
             % Create task_run3
             app.task_run3 = uibutton(app.panel_task, 'push');
-            app.task_run3.ButtonPushedFcn = createCallbackFcn(app, @task_run3ButtonPushed, true);
+            app.task_run3.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.task_run3.Position = [97 23 66 23];
             app.task_run3.Text = '第三轮';
 
             % Create task_run2
             app.task_run2 = uibutton(app.panel_task, 'push');
-            app.task_run2.ButtonPushedFcn = createCallbackFcn(app, @task_run2ButtonPushed, true);
+            app.task_run2.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.task_run2.Position = [143 70 66 23];
             app.task_run2.Text = '第二轮';
 
             % Create task_run1
             app.task_run1 = uibutton(app.panel_task, 'push');
-            app.task_run1.ButtonPushedFcn = createCallbackFcn(app, @task_run1ButtonPushed, true);
+            app.task_run1.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.task_run1.Position = [44 70 66 23];
             app.task_run1.Text = '第一轮';
 
@@ -714,13 +658,13 @@ classdef StartExperiment < matlab.apps.AppBase
 
             % Create resting2_run2
             app.resting2_run2 = uibutton(app.panel_resting2, 'push');
-            app.resting2_run2.ButtonPushedFcn = createCallbackFcn(app, @resting2_run2ButtonPushed, true);
+            app.resting2_run2.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.resting2_run2.Position = [143 20 66 23];
             app.resting2_run2.Text = '第二轮';
 
             % Create resting2_run1
             app.resting2_run1 = uibutton(app.panel_resting2, 'push');
-            app.resting2_run1.ButtonPushedFcn = createCallbackFcn(app, @resting2_run1ButtonPushed, true);
+            app.resting2_run1.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
             app.resting2_run1.Position = [44 20 66 23];
             app.resting2_run1.Text = '第一轮';
 
