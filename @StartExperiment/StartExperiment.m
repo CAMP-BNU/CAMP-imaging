@@ -322,14 +322,17 @@ classdef StartExperiment < matlab.apps.AppBase
             app.initialize()
             % disable whole user panel when editing user
             app.panel_user.Enable = "off";
-            CreateOrModifyUser(app, "create", app.users_history);
+            CreateOrModifyUser(app, "create", ...
+                "UsersHistory", app.users_history);
         end
 
         % Button pushed function: button_modify
         function button_modifyButtonPushed(app, event)
             % disable whole user panel when editing user
             app.panel_user.Enable = "off";
-            CreateOrModifyUser(app, "modify", app.user);
+            CreateOrModifyUser(app, "modify", ...
+                "UsersHistory", app.users_history, ...
+                "User", app.user);
         end
 
         % Menu selected function: menu_load_user

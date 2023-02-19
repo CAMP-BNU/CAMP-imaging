@@ -40,14 +40,20 @@ classdef CreateOrModifyUser < matlab.apps.AppBase
     methods (Access = private)
 
         % Code that executes after component creation
-        function startupFcn(app, main_app, method, user)
+        function startupFcn(app, main_app, method, opts)
+            arguments
+                app
+                main_app
+                method {mustBeMember(method, ["create", "modify"])}
+                opts.UsersHistory
+                opts.User
+            end
             app.calling_app = main_app;
             app.calling_type = method;
-            if app.calling_type == "create"
-                app.users_history = user;
-            else
+            app.users_history = opts.UsersHistory;
+            if method == "modify"
                 app.ui_user_id.Enable = "off";
-                app.update_user(user)
+                app.update_user(opts.User)
             end
         end
 
@@ -75,11 +81,20 @@ classdef CreateOrModifyUser < matlab.apps.AppBase
                         'Icon', 'warning');
                     return
                 end
-                app.calling_app.register_user(app.user)
-                app.calling_app.button_modify.Enable = "on";
-            else
-                app.calling_app.update_user(app.user)
             end
+            cur_user = struct2table(app.user);
+            matched = ismember(removevars(app.users_history, "id"), ...
+                removevars(cur_user, "id"));
+            if any(matched)
+                uialert(app.UIFigure, ...
+                    sprintf('当前用户已使用别的编号：%d，请修改', ...
+                    app.users_history.id(matched)), ...
+                    '确认用户信息', ...
+                    'Icon', 'warning');
+                return
+            end
+            app.calling_app.register_user(app.user)
+            app.calling_app.button_modify.Enable = "on";
             app.calling_app.panel_user.Enable = "on";
             delete(app)
         end
