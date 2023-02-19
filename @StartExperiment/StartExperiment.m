@@ -401,6 +401,12 @@ classdef StartExperiment < matlab.apps.AppBase
                         '拷贝出错', 'Interpreter', 'html');
             end
         end
+
+        % Menu selected function: menu_upload_data
+        function menu_upload_dataMenuSelected(app, event)
+            uialert(app.UIFigure, '暂未支持，开发中...', '开发中', 'Icon', 'info')
+            return
+        end
     end
 
     % Component initialization
@@ -438,6 +444,7 @@ classdef StartExperiment < matlab.apps.AppBase
 
             % Create menu_upload_data
             app.menu_upload_data = uimenu(app.Menu_2);
+            app.menu_upload_data.MenuSelectedFcn = createCallbackFcn(app, @menu_upload_dataMenuSelected, true);
             app.menu_upload_data.Text = '上传';
 
             % Create menu_copy_data
