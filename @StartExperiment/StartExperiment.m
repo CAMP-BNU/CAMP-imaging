@@ -113,7 +113,6 @@ classdef StartExperiment < matlab.apps.AppBase
         end
 
         function load_user(app, user)
-            app.initialize()
             % remove current user from users history
             app.users_history(app.users_history.id == user.id, :) = [];
             app.push_user(user)
