@@ -93,8 +93,8 @@ classdef StartExperiment < matlab.apps.AppBase
 
         function push_user(app, user)
             app.user = user;
-            app.label_user_id.Text = sprintf('%d', app.user.id);
-            app.label_user_name.Text = app.user.name;
+            app.label_user_id.Text = string(app.user.id);
+            app.label_user_name.Text = string(app.user.name);
             app.label_user_sex.Text = app.user.sex;
             app.label_user_dob.Text = string(app.user.dob, 'yyyy-MM-dd');
             if user.id ~= 0
