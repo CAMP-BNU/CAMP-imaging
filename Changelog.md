@@ -1,6 +1,8 @@
 # Developing Version
 
 * [Feature] Support new 6 point post recognition test ([#12](https://github.com/psychelzh/wm-fmri/issues/12)).
+* Enhanced subject management and ui logic.
+* Removed contents of post recognition test and all the raw stimuli.
 
 # 0.1.1
 
