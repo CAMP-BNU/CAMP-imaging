@@ -41,18 +41,6 @@ old_text_render = Screen('Preference', 'TextRenderer', 1);
 % set priority to the top
 old_pri = Priority(MaxPriority(screen_to_display));
 
-[window_ptr, window_rect] = PsychImaging('OpenWindow', screen_to_display, BlackIndex(screen_to_display));
-% get inter flip interval
-ifi = Screen('GetFlipInterval', window_ptr);
-% disable character input and hide mouse cursor
-ListenChar(2);
-HideCursor;
-% set blending function
-Screen('BlendFunction', window_ptr, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-% set default font name
-Screen('TextFont', window_ptr, 'SimHei');
-Screen('TextSize', window_ptr, round(0.06 * RectHeight(window_rect)));
-
 keys = struct( ...
     'start', KbName('s'), ...
     'exit', KbName('Escape'));
@@ -60,6 +48,17 @@ keys = struct( ...
 try
     % the flag to determine if the experiment should exit early
     early_exit = false;
+    [window_ptr, window_rect] = PsychImaging('OpenWindow', screen_to_display, BlackIndex(screen_to_display));
+    % get inter flip interval
+    ifi = Screen('GetFlipInterval', window_ptr);
+    % disable character input and hide mouse cursor
+    ListenChar(2);
+    HideCursor;
+    % set blending function
+    Screen('BlendFunction', window_ptr, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    % set default font name
+    Screen('TextFont', window_ptr, 'SimHei');
+    Screen('TextSize', window_ptr, round(0.06 * RectHeight(window_rect)));
     DrawFormattedText(window_ptr, double('下面进入观看短片环节'), 'center', 'center', get_color('white'));
     Screen('Flip', window_ptr);
     % open the first movie
