@@ -557,7 +557,7 @@ classdef StartExperiment < matlab.apps.AppBase
             % Create set_struct1_dur
             app.set_struct1_dur = uieditfield(app.panel_struct1, 'numeric');
             app.set_struct1_dur.Position = [149 11 55 22];
-            app.set_struct1_dur.Value = 20;
+            app.set_struct1_dur.Value = 17;
 
             % Create struct1
             app.struct1 = uibutton(app.panel_struct1, 'push');
