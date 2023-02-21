@@ -581,6 +581,7 @@ classdef StartExperiment < matlab.apps.AppBase
 
             % Create set_struct1_dur
             app.set_struct1_dur = uieditfield(app.panel_struct1, 'numeric');
+            app.set_struct1_dur.Tooltip = {'有5秒进入时间。因此最终时间为此处时间+5秒。'};
             app.set_struct1_dur.Position = [149 11 55 22];
             app.set_struct1_dur.Value = 17;
 
@@ -670,6 +671,7 @@ classdef StartExperiment < matlab.apps.AppBase
 
             % Create set_struct2_dur
             app.set_struct2_dur = uieditfield(app.panel_struct2, 'numeric');
+            app.set_struct2_dur.Tooltip = {'有5秒进入时间。因此最终时间为此处时间+5秒。'};
             app.set_struct2_dur.Position = [151 9 55 22];
             app.set_struct2_dur.Value = 5;
 
@@ -790,6 +792,7 @@ classdef StartExperiment < matlab.apps.AppBase
             % Create set_fix_dur
             app.set_fix_dur = uieditfield(app.Panel, 'numeric');
             app.set_fix_dur.Limits = [0 Inf];
+            app.set_fix_dur.Tooltip = {'有5秒进入时间。因此最终时间为此处时间+5秒。'};
             app.set_fix_dur.Position = [143 13 55 22];
             app.set_fix_dur.Value = 7.5;
 
