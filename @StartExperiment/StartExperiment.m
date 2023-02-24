@@ -241,7 +241,7 @@ classdef StartExperiment < matlab.apps.AppBase
         function display_stimuli(app, event)
             proj_name_active = app.project_names(app.project_active);
             extra = [];
-            recordings = table();
+            disp = [];
             if contains(proj_name_active, "resting")
                 [status, exception] = exp.start_fixation("Duration", 7.7, "SkipSyncTests", app.skip_sync_tests);
             elseif contains(proj_name_active, "movie")
@@ -249,16 +249,26 @@ classdef StartExperiment < matlab.apps.AppBase
                 [status, exception] = exp.start_movie(run_id, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
             elseif contains(proj_name_active, "twoback")
                 [status, exception, recordings] = exp.start_twoback("test", app.project_progress + 1, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
+                disp = mean(recordings.acc(~ismember(recordings.cond, ["filler", "rest"])), 'omitnan');
+                if isnan(disp)
+                    disp = 0;
+                end
             elseif contains(proj_name_active, "struct")
                 extra = app.(sprintf('set_%s_dur', proj_name_active));
                 [status, exception] = exp.start_fixation("Duration", extra.Value, "SkipSyncTests", app.skip_sync_tests);
             else
                 status = 0;
                 exception = [];
+                try
+                    [~, ~, disp] = exp.start_amt("test", app.project_progress + 1, ...
+                        "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
+                catch exception
+                    status = 1;
+                end
             end
             app.check_progress(status, exception, event.Source, ...
                 "ExtraComp", extra, ...
-                "Recordings", recordings)
+                "Display", disp)
         end
         
         function check_progress(app, status, exception, component, opts)
@@ -268,10 +278,10 @@ classdef StartExperiment < matlab.apps.AppBase
                 exception
                 component
                 opts.ExtraComp = []
-                opts.Recordings = table()
+                opts.Display = []
             end
             extra = opts.ExtraComp;
-            rec = opts.Recordings;
+            disp = opts.Display;
             if status == 2
                 selection = uiconfirm(app.UIFigure, ...
                     '本流程似乎已经提前退出，请确认是否完成？', ...
@@ -284,12 +294,13 @@ classdef StartExperiment < matlab.apps.AppBase
                 is_completed = status == 0;
             end
             component.Tooltip = "";
-            if is_completed && ~isempty(rec)
-                pc = mean(rec.acc(~ismember(rec.cond, ["filler", "rest"])), 'omitnan');
-                if isnan(pc)
-                    pc = 0;
+            if is_completed && ~isempty(disp)
+                if length(disp) == 1
+                    component.Tooltip = sprintf('正确率：%.1f%%。', disp * 100);
+                else
+                    component.Tooltip = arrayfun(@(type, pc) sprintf("%s正确率：%.1f%%", type, pc), ...
+                        ["背景", "位置"], disp * 100);
                 end
-                component.Tooltip = sprintf('正确率：%.1f%%。', pc * 100);
             end
             app.report_status(status, exception, component)
             if is_completed
