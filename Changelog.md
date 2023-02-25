@@ -1,4 +1,4 @@
-# Development Version
+# 0.2.1
 
 * Renamed the project as `CAMP-imaging`. This will be more informative for the future development of the project.
 * Supported fixation without triggering. Now all the fixation screen will be displayed without waiting for the scanner to trigger start, and will remain on screen before the experimenter presses `'Escape'` key([#18](https://github.com/psychelzh/CAMP-imaging/issues/18)).
