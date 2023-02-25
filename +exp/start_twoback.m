@@ -9,8 +9,6 @@ arguments
     opts.SkipSyncTests (1, 1) {mustBeNumericOrLogical} = false
 end
 
-import exp.init_config
-
 % ---- set default error related outputs ----
 status = 0;
 exception = [];
@@ -54,9 +52,11 @@ keys = struct( ...
     'diff', KbName('4$'));
 
 % ---- stimuli presentation ----
+% the flag to determine if the experiment should exit early
+early_exit = false;
+% the flag to determine if early exiting will be treated as normal
+early_exit_okay = false;
 try
-    % the flag to determine if the experiment should exit early
-    early_exit = false;
     % open a window and set its background color as gray
     [window_ptr, window_rect] = PsychImaging('OpenWindow', screen_to_display, WhiteIndex(screen_to_display));
     % disable character input and hide mouse cursor
@@ -78,7 +78,7 @@ try
     % display welcome/instr screen and wait for a press of 's' to start
     switch phase
         case "prac"
-            [instr, ~, intsr_alpha] = imread(fullfile('image', 'instr.png'));
+            [instr, ~, intsr_alpha] = imread(fullfile('image', 'twoback', 'instr.png'));
             instr(:, :, 4) = intsr_alpha;
             instr_tex = Screen('MakeTexture', window_ptr, instr);
             Screen('DrawTexture', window_ptr, instr_tex, [], window_rect)
@@ -148,11 +148,26 @@ try
         end
 
     end
+
+    % post wait-to-end screen
+    if ~early_exit && phase == "test"
+        early_exit_okay = true;
+        instr_ending = char(strjoin(readlines(fullfile('common', 'instr_ending.txt'), ...
+            "EmptyLineRule", "skip"), "\n"));
+        DrawFormattedText(window_ptr, double(instr_ending), 'center', 'center');
+        Screen('Flip', window_ptr);
+        while ~early_exit
+            [~, key_code] = KbStrokeWait(-1);
+            if key_code(keys.exit)
+                early_exit = true;
+            end
+        end
+    end
 catch exception
     status = 1;
 end
 
-if early_exit
+if early_exit && ~early_exit_okay
     status = 2;
 end
 
@@ -178,7 +193,7 @@ end
     function [resp_collected, timing_real] = collect_response(trial)
         % this might be time consumig
         stim_file = [num2str(trial.stim), '.jpg'];
-        stim_pic = imread(fullfile('stimuli', trial.stim_type, stim_file));
+        stim_pic = imread(fullfile('stimuli', 'twoback', trial.stim_type, stim_file));
         stim = Screen('MakeTexture', window_ptr, stim_pic);
         % present stimuli
         resp_made = false;
@@ -281,4 +296,142 @@ end
             end
         end
     end
+end
+
+function config = init_config(phase, timing)
+%INIT_CONFIG Initializing configurations for all tasks
+
+arguments
+    phase {mustBeTextScalar, mustBeMember(phase, ["prac", "test", "post"])}
+    timing struct
+end
+
+trials_each_block = 11;
+trial_dur = timing.stim_secs + timing.blank_secs + ...
+    timing.feedback_secs * (phase == "prac"); % feedback when practice
+block_dur = trial_dur * trials_each_block + ...
+    timing.fixation_secs.(phase); % fixation when test
+switch phase
+    case "prac"
+        rng('shuffle')
+        stim_types = ["word", "object", "place", "face"];
+        config = table;
+        for i_block = 1:length(stim_types)
+            cur_block = addvars( ...
+                init_trials(trials_each_block), ...
+                ones(trials_each_block + 1, 1), ... % run_id
+                i_block * ones(trials_each_block + 1, 1), ... % block_id
+                repmat(stim_types(i_block), trials_each_block + 1, 1), ... % stim_type
+                'NewVariableNames', {'run_id', 'block_id', 'stim_type'}, ...
+                'Before', 1);
+            config = vertcat(config, cur_block); %#ok<AGROW>
+        end
+    case "test"
+        config = readtable(fullfile('stimuli', 'twoback', 'sequence.csv'), "TextType", "string");
+end
+config.stim_onset = (config.block_id - 1) * block_dur + ...
+    (config.trial_id - 1) * trial_dur;
+config.stim_offset = config.stim_onset + timing.stim_secs;
+config.trial_end = config.stim_offset + timing.blank_secs;
+config.stim_offset(config.cond == "rest") = nan;
+config.trial_end(config.cond == "rest") = ...
+    config.stim_onset(config.cond == "rest") + timing.fixation_secs.(phase);
+end
+
+function trials = init_trials(num_trials, task_load, opts)
+arguments
+    num_trials {mustBeInteger, mustBePositive} = 10
+    task_load {mustBeInteger, mustBePositive, ...
+        mustBeLessThan(task_load, num_trials)} = 2
+    opts.StimsPool = 91:95 % practice stimuli no is from 91 to 95
+    opts.AppendRest {mustBeNumericOrLogical} = true;
+end
+
+stims_pool = opts.StimsPool;
+append_rest = opts.AppendRest;
+
+n_filler = task_load;
+n_same = fix((num_trials - task_load) / 2);
+n_lure = fix((num_trials - task_load) / 4);
+n_diff = num_trials - n_filler - n_same - n_lure;
+stim_conds = [ ...
+    repelem("same", n_same), ...
+    repelem("lure", n_lure), ...
+    repelem("diff", n_diff)];
+% ---- randomise conditions ----
+cond_okay = false;
+while ~cond_okay
+    cond_order = [ ...
+        repelem("filler", task_load), ...
+        stim_conds(randperm(length(stim_conds)))];
+    cresp_order = strings(1, length(cond_order));
+    for i = 1:length(cond_order)
+        if cond_order(i) == "filler"
+            cresp_order(i) = "none";
+        elseif ismember(cond_order(i), ["lure", "diff"])
+            cresp_order(i) = "diff";
+        else
+            cresp_order(i) = "same";
+        end
+    end
+    % lure/same trials cannot directly follow lure trials
+    after_lure = cond_order(circshift(cond_order == "lure", 1));
+    if (any(ismember(after_lure, ["lure", "same"])))
+        continue
+    end
+    % require no more than 3 consecutive repetition responses
+    cond_okay = validate_consecutive(cresp_order(task_load + 1:end));
+end
+
+% --- allocate stimulus ---
+order_stim = [ ...
+    randsample(stims_pool, task_load, false), ...
+    nan(1, num_trials - task_load)];
+for i = (task_load + 1):num_trials
+    if cond_order(i) == "same"
+        order_stim(i) = order_stim(i - task_load);
+    else
+        if cond_order(i) == "lure"
+            stims_sample = order_stim(i - (1:(task_load - 1)));
+        else
+            stims_sample = setdiff(stims_pool, ...
+                order_stim(i - (1:task_load)));
+        end
+        order_stim(i) = randsample(stims_pool, 1, true, ...
+            ismember(stims_pool, stims_sample));
+    end
+end
+
+trials = table( ...
+    (1:num_trials)', order_stim', ...
+    cond_order', cresp_order', ...
+    VariableNames=["trial_id", "stim", "cond", "cresp"]);
+if append_rest
+    rest_trial = table(12, 0, "rest", "none", ...
+        VariableNames=["trial_id", "stim", "cond", "cresp"]);
+    trials = vertcat(trials, rest_trial);
+end
+end
+
+function tf = validate_consecutive(seq, max_run_value)
+arguments
+    seq {mustBeVector}
+    max_run_value (1, 1) {mustBeInteger, mustBePositive} = 3
+end
+
+tf = true;
+run_value = missing;
+for i = 1:length(seq)
+    cur_value = seq(i);
+    if run_value ~= cur_value
+        run_value = cur_value;
+        run_length = 1;
+    else
+        run_length = run_length + 1;
+    end
+    if run_length > max_run_value
+        tf = false;
+        break
+    end
+end
 end
