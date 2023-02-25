@@ -1,3 +1,10 @@
+# 0.2.0
+
+* Removed post-test ([#12](https://github.com/psychelzh/wm-fmri/issues/12)).
+* Enhanced subject management and ui logic.
+* Removed contents of post recognition test and all the raw stimuli.
+* Added association memory test.
+
 # 0.1.1
 
 * Fix practice face images.

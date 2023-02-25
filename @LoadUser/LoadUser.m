@@ -40,7 +40,8 @@ classdef LoadUser < matlab.apps.AppBase
                     '已选择被试已完成全部项目，仍然导入？', ...
                     '导入确认', ...
                     'Icon', 'warning', ...
-                    'Options', {'重新选择', '继续导入'});
+                    'Options', {'重新选择', '继续导入'}, ...
+                    'CancelOption', '重新选择');
                 if choice == "重新选择"
                     return
                 end
@@ -53,6 +54,13 @@ classdef LoadUser < matlab.apps.AppBase
 
         % Button pushed function: Button_2
         function Button_2Pushed(app, event)
+            app.calling_app.panel_user.Enable = "on";
+            delete(app)
+        end
+
+        % Close request function: UIFigure
+        function UIFigureCloseRequest(app, event)
+            app.calling_app.panel_user.Enable = "on";
             delete(app)
         end
     end
@@ -67,6 +75,7 @@ classdef LoadUser < matlab.apps.AppBase
             app.UIFigure = uifigure('Visible', 'off');
             app.UIFigure.Position = [100 100 500 400];
             app.UIFigure.Name = 'MATLAB App';
+            app.UIFigure.CloseRequestFcn = createCallbackFcn(app, @UIFigureCloseRequest, true);
 
             % Create UITable
             app.UITable = uitable(app.UIFigure);
