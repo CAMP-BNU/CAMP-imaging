@@ -10,8 +10,6 @@ classdef StartExperiment < matlab.apps.AppBase
         menu_upload_data        matlab.ui.container.Menu
         menu_copy_data          matlab.ui.container.Menu
         Panel                   matlab.ui.container.Panel
-        set_fix_dur             matlab.ui.control.NumericEditField
-        Label_10                matlab.ui.control.Label
         start_fixation          matlab.ui.control.Button
         PTBPanel                matlab.ui.container.Panel
         switch_skip_sync_tests  matlab.ui.control.Switch
@@ -20,7 +18,6 @@ classdef StartExperiment < matlab.apps.AppBase
         tab_day_one             matlab.ui.container.Tab
         panel_resting1          matlab.ui.container.Panel
         resting1_run1           matlab.ui.control.Button
-        resting1_run2           matlab.ui.control.Button
         panel_assocmem          matlab.ui.container.Panel
         assocmem_run1           matlab.ui.control.Button
         assocmem_run2           matlab.ui.control.Button
@@ -29,12 +26,9 @@ classdef StartExperiment < matlab.apps.AppBase
         movie1_run2             matlab.ui.control.Button
         panel_struct1           matlab.ui.container.Panel
         struct1                 matlab.ui.control.Button
-        set_struct1_dur         matlab.ui.control.NumericEditField
-        Label_8                 matlab.ui.control.Label
         tab_day_two             matlab.ui.container.Tab
         panel_resting2          matlab.ui.container.Panel
         resting2_run1           matlab.ui.control.Button
-        resting2_run2           matlab.ui.control.Button
         panel_twoback           matlab.ui.container.Panel
         twoback_run1            matlab.ui.control.Button
         twoback_run2            matlab.ui.control.Button
@@ -44,8 +38,6 @@ classdef StartExperiment < matlab.apps.AppBase
         movie2_run2             matlab.ui.control.Button
         panel_struct2           matlab.ui.container.Panel
         struct2                 matlab.ui.control.Button
-        set_struct2_dur         matlab.ui.control.NumericEditField
-        Label_9                 matlab.ui.control.Label
         panel_user              matlab.ui.container.Panel
         button_modify           matlab.ui.control.Button
         Label_6                 matlab.ui.control.Label
@@ -85,7 +77,7 @@ classdef StartExperiment < matlab.apps.AppBase
         % make sure this name is part of the panel
         project_names = ["resting1", "assocmem", "movie1", "struct1", ...
             "resting2", "twoback", "movie2", "struct2"]
-        project_runs = [2, 2, 2, 1, 2, 3, 2, 1]
+        project_runs = [1, 2, 2, 1, 1, 3, 2, 1]
         sessions = [4, 4];
 
         % data files (csv format)
@@ -240,48 +232,32 @@ classdef StartExperiment < matlab.apps.AppBase
 
         function display_stimuli(app, event)
             proj_name_active = app.project_names(app.project_active);
-            extra = [];
-            disp = [];
-            if contains(proj_name_active, "resting")
-                [status, exception] = exp.start_fixation("Duration", 7.7, "SkipSyncTests", app.skip_sync_tests);
+            result = [];
+            if contains(proj_name_active, regexpPattern("resting|struct"))
+                [status, exception] = exp.start_fixation("Mode", "auto", "SkipSyncTests", app.skip_sync_tests);
             elseif contains(proj_name_active, "movie")
                 run_id = (app.session_active - 1) * 2 + app.project_progress + 1;
                 [status, exception] = exp.start_movie(run_id, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
             elseif contains(proj_name_active, "twoback")
                 [status, exception, recordings] = exp.start_twoback("test", app.project_progress + 1, "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
-                disp = mean(recordings.acc(~ismember(recordings.cond, ["filler", "rest"])), 'omitnan');
-                if isnan(disp)
-                    disp = 0;
+                result = mean(recordings.acc(~ismember(recordings.cond, ["filler", "rest"])), 'omitnan');
+                if isnan(result)
+                    result = 0;
                 end
-            elseif contains(proj_name_active, "struct")
-                extra = app.(sprintf('set_%s_dur', proj_name_active));
-                [status, exception] = exp.start_fixation("Duration", extra.Value, "SkipSyncTests", app.skip_sync_tests);
             else
                 status = 0;
                 exception = [];
                 try
-                    [~, ~, disp] = exp.start_amt("test", app.project_progress + 1, ...
+                    [~, ~, result] = exp.start_amt("test", app.project_progress + 1, ...
                         "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
                 catch exception
                     status = 1;
                 end
             end
-            app.check_progress(status, exception, event.Source, ...
-                "ExtraComp", extra, ...
-                "Display", disp)
+            app.check_progress(status, exception, event.Source, result)
         end
         
-        function check_progress(app, status, exception, component, opts)
-            arguments
-                app
-                status
-                exception
-                component
-                opts.ExtraComp = []
-                opts.Display = []
-            end
-            extra = opts.ExtraComp;
-            disp = opts.Display;
+        function check_progress(app, status, exception, component, result)
             if status == 2
                 selection = uiconfirm(app.UIFigure, ...
                     '本流程似乎已经提前退出，请确认是否完成？', ...
@@ -294,20 +270,18 @@ classdef StartExperiment < matlab.apps.AppBase
                 is_completed = status == 0;
             end
             component.Tooltip = "";
-            if is_completed && ~isempty(disp)
-                if length(disp) == 1
-                    component.Tooltip = sprintf('正确率：%.1f%%。', disp * 100);
-                else
-                    component.Tooltip = arrayfun(@(type, pc) sprintf("%s正确率：%.1f%%", type, pc), ...
-                        ["背景", "位置"], disp * 100);
-                end
-            end
             app.report_status(status, exception, component)
             if is_completed
-                component.Enable = "off";
-                if ~isempty(extra)
-                    extra.Enable = "off";
+                if ~isempty(result)
+                    if length(result) == 1
+                        tooltip = sprintf('正确率：%.1f%%。', result * 100);
+                    else
+                        tooltip = arrayfun(@(type, pc) sprintf("%s正确率：%.1f%%", type, pc), ...
+                            ["背景", "位置"], result * 100);
+                    end
+                    app.append_tooltip(component, tooltip)
                 end
+                component.Enable = "off";
                 app.proceed_next()
             end
         end
@@ -317,11 +291,7 @@ classdef StartExperiment < matlab.apps.AppBase
                 if isempty(exception)
                     component.BackgroundColor = "yellow";
                     if status == 2
-                        tooltip = "最近一次运行提前退出!";
-                        if component.Tooltip ~= ""
-                            tooltip = [component.Tooltip, tooltip];
-                        end
-                        component.Tooltip = tooltip;
+                        app.append_tooltip(component, "最近一次运行提前退出!")
                     end
                 else
                     component.BackgroundColor = "red";
@@ -347,6 +317,13 @@ classdef StartExperiment < matlab.apps.AppBase
                     result = false;
                 end
             end
+        end
+
+        function append_tooltip(~, component, tooltip)
+            if component.Tooltip ~= ""
+                tooltip = [component.Tooltip, tooltip];
+            end
+            component.Tooltip = tooltip;
         end
     end
     
@@ -408,14 +385,14 @@ classdef StartExperiment < matlab.apps.AppBase
         end
 
         % Button pushed function: assocmem_run1, assocmem_run2, 
-        % ...and 13 other components
+        % ...and 11 other components
         function projectStartButtonPushed(app, event)
             app.display_stimuli(event)
         end
 
         % Button pushed function: start_fixation
         function start_fixationButtonPushed(app, event)
-            [status, exception] = exp.start_fixation("Duration", app.set_fix_dur.Value, "SkipSyncTests", app.skip_sync_tests);
+            [status, exception] = exp.start_fixation("Mode", "auto", "SkipSyncTests", app.skip_sync_tests);
             app.report_status(status, exception, event.Source)
         end
 
@@ -570,7 +547,7 @@ classdef StartExperiment < matlab.apps.AppBase
 
             % Create tab_all_tests
             app.tab_all_tests = uitabgroup(app.UIFigure);
-            app.tab_all_tests.Position = [357 24 406 457];
+            app.tab_all_tests.Position = [357 35 406 446];
 
             % Create tab_day_one
             app.tab_day_one = uitab(app.tab_all_tests);
@@ -579,47 +556,35 @@ classdef StartExperiment < matlab.apps.AppBase
             % Create panel_struct1
             app.panel_struct1 = uipanel(app.tab_day_one);
             app.panel_struct1.TitlePosition = 'centertop';
-            app.panel_struct1.Title = '结构像-第一阶段';
+            app.panel_struct1.Title = '结构像';
             app.panel_struct1.FontName = 'Microsoft YaHei UI';
             app.panel_struct1.FontSize = 16;
-            app.panel_struct1.Position = [73 14 260 104];
-
-            % Create Label_8
-            app.Label_8 = uilabel(app.panel_struct1);
-            app.Label_8.HorizontalAlignment = 'right';
-            app.Label_8.Position = [57 11 77 22];
-            app.Label_8.Text = '时间（分钟）';
-
-            % Create set_struct1_dur
-            app.set_struct1_dur = uieditfield(app.panel_struct1, 'numeric');
-            app.set_struct1_dur.Tooltip = {'有5秒进入时间。因此最终时间为此处时间+5秒。'};
-            app.set_struct1_dur.Position = [149 11 55 22];
-            app.set_struct1_dur.Value = 17;
+            app.panel_struct1.Position = [73 24 260 83];
 
             % Create struct1
             app.struct1 = uibutton(app.panel_struct1, 'push');
             app.struct1.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
-            app.struct1.Position = [84 45 100 23];
+            app.struct1.Position = [84 20 100 23];
             app.struct1.Text = '开始';
 
             % Create panel_movie1
             app.panel_movie1 = uipanel(app.tab_day_one);
             app.panel_movie1.TitlePosition = 'centertop';
-            app.panel_movie1.Title = '电影观看-第一阶段';
+            app.panel_movie1.Title = '电影观看';
             app.panel_movie1.FontName = 'Microsoft YaHei UI';
             app.panel_movie1.FontSize = 16;
-            app.panel_movie1.Position = [73 136 260 84];
+            app.panel_movie1.Position = [73 125 260 84];
 
             % Create movie1_run2
             app.movie1_run2 = uibutton(app.panel_movie1, 'push');
             app.movie1_run2.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
-            app.movie1_run2.Position = [143 21 66 23];
+            app.movie1_run2.Position = [145 21 66 23];
             app.movie1_run2.Text = '第二轮';
 
             % Create movie1_run1
             app.movie1_run1 = uibutton(app.panel_movie1, 'push');
             app.movie1_run1.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
-            app.movie1_run1.Position = [44 21 66 23];
+            app.movie1_run1.Position = [46 21 66 23];
             app.movie1_run1.Text = '第一轮';
 
             % Create panel_assocmem
@@ -628,39 +593,33 @@ classdef StartExperiment < matlab.apps.AppBase
             app.panel_assocmem.Title = '联系记忆任务';
             app.panel_assocmem.FontName = 'Microsoft YaHei UI';
             app.panel_assocmem.FontSize = 16;
-            app.panel_assocmem.Position = [73 234 260 87];
+            app.panel_assocmem.Position = [73 223 260 87];
 
             % Create assocmem_run2
             app.assocmem_run2 = uibutton(app.panel_assocmem, 'push');
             app.assocmem_run2.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
-            app.assocmem_run2.Position = [145 21 66 23];
+            app.assocmem_run2.Position = [147 21 66 23];
             app.assocmem_run2.Text = '第二轮';
 
             % Create assocmem_run1
             app.assocmem_run1 = uibutton(app.panel_assocmem, 'push');
             app.assocmem_run1.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
-            app.assocmem_run1.Position = [46 21 66 23];
+            app.assocmem_run1.Position = [48 21 66 23];
             app.assocmem_run1.Text = '第一轮';
 
             % Create panel_resting1
             app.panel_resting1 = uipanel(app.tab_day_one);
             app.panel_resting1.TitlePosition = 'centertop';
-            app.panel_resting1.Title = '静息态-第一阶段';
+            app.panel_resting1.Title = '准备与静息态';
             app.panel_resting1.FontName = 'Microsoft YaHei UI';
             app.panel_resting1.FontSize = 16;
-            app.panel_resting1.Position = [73 337 260 75];
-
-            % Create resting1_run2
-            app.resting1_run2 = uibutton(app.panel_resting1, 'push');
-            app.resting1_run2.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
-            app.resting1_run2.Position = [145 16 66 23];
-            app.resting1_run2.Text = '第二轮';
+            app.panel_resting1.Position = [73 326 260 75];
 
             % Create resting1_run1
             app.resting1_run1 = uibutton(app.panel_resting1, 'push');
             app.resting1_run1.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
-            app.resting1_run1.Position = [46 16 66 23];
-            app.resting1_run1.Text = '第一轮';
+            app.resting1_run1.Position = [82 15 96 23];
+            app.resting1_run1.Text = '开始';
 
             % Create tab_day_two
             app.tab_day_two = uitab(app.tab_all_tests);
@@ -669,36 +628,24 @@ classdef StartExperiment < matlab.apps.AppBase
             % Create panel_struct2
             app.panel_struct2 = uipanel(app.tab_day_two);
             app.panel_struct2.TitlePosition = 'centertop';
-            app.panel_struct2.Title = '结构像-第二阶段';
+            app.panel_struct2.Title = '结构像';
             app.panel_struct2.FontName = 'Microsoft YaHei UI';
             app.panel_struct2.FontSize = 16;
-            app.panel_struct2.Position = [74 24 260 94];
-
-            % Create Label_9
-            app.Label_9 = uilabel(app.panel_struct2);
-            app.Label_9.HorizontalAlignment = 'right';
-            app.Label_9.Position = [59 9 77 22];
-            app.Label_9.Text = '时间（分钟）';
-
-            % Create set_struct2_dur
-            app.set_struct2_dur = uieditfield(app.panel_struct2, 'numeric');
-            app.set_struct2_dur.Tooltip = {'有5秒进入时间。因此最终时间为此处时间+5秒。'};
-            app.set_struct2_dur.Position = [151 9 55 22];
-            app.set_struct2_dur.Value = 5;
+            app.panel_struct2.Position = [74 24 260 83];
 
             % Create struct2
             app.struct2 = uibutton(app.panel_struct2, 'push');
             app.struct2.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
-            app.struct2.Position = [83 35 100 23];
+            app.struct2.Position = [83 20 100 23];
             app.struct2.Text = '开始';
 
             % Create panel_movie2
             app.panel_movie2 = uipanel(app.tab_day_two);
             app.panel_movie2.TitlePosition = 'centertop';
-            app.panel_movie2.Title = '电影观看-第二阶段';
+            app.panel_movie2.Title = '电影观看';
             app.panel_movie2.FontName = 'Microsoft YaHei UI';
             app.panel_movie2.FontSize = 16;
-            app.panel_movie2.Position = [73 134 260 84];
+            app.panel_movie2.Position = [73 123 260 84];
 
             % Create movie2_run2
             app.movie2_run2 = uibutton(app.panel_movie2, 'push');
@@ -718,7 +665,7 @@ classdef StartExperiment < matlab.apps.AppBase
             app.panel_twoback.Title = '工作记忆任务';
             app.panel_twoback.FontName = 'Microsoft YaHei UI';
             app.panel_twoback.FontSize = 16;
-            app.panel_twoback.Position = [73 234 260 87];
+            app.panel_twoback.Position = [73 223 260 87];
 
             % Create twoback_run3
             app.twoback_run3 = uibutton(app.panel_twoback, 'push');
@@ -741,22 +688,16 @@ classdef StartExperiment < matlab.apps.AppBase
             % Create panel_resting2
             app.panel_resting2 = uipanel(app.tab_day_two);
             app.panel_resting2.TitlePosition = 'centertop';
-            app.panel_resting2.Title = '静息态-第二阶段';
+            app.panel_resting2.Title = '准备与静息态';
             app.panel_resting2.FontName = 'Microsoft YaHei UI';
             app.panel_resting2.FontSize = 16;
-            app.panel_resting2.Position = [73 337 260 74];
-
-            % Create resting2_run2
-            app.resting2_run2 = uibutton(app.panel_resting2, 'push');
-            app.resting2_run2.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
-            app.resting2_run2.Position = [144 15 66 23];
-            app.resting2_run2.Text = '第二轮';
+            app.panel_resting2.Position = [73 326 260 74];
 
             % Create resting2_run1
             app.resting2_run1 = uibutton(app.panel_resting2, 'push');
             app.resting2_run1.ButtonPushedFcn = createCallbackFcn(app, @projectStartButtonPushed, true);
-            app.resting2_run1.Position = [45 15 66 23];
-            app.resting2_run1.Text = '第一轮';
+            app.resting2_run1.Position = [82 15 95 23];
+            app.resting2_run1.Text = '开始';
 
             % Create PTBPanel
             app.PTBPanel = uipanel(app.UIFigure);
@@ -786,26 +727,13 @@ classdef StartExperiment < matlab.apps.AppBase
             app.Panel.Title = '备用';
             app.Panel.FontName = 'Microsoft YaHei UI';
             app.Panel.FontSize = 16;
-            app.Panel.Position = [53 25 250 107];
+            app.Panel.Position = [53 35 250 97];
 
             % Create start_fixation
             app.start_fixation = uibutton(app.Panel, 'push');
             app.start_fixation.ButtonPushedFcn = createCallbackFcn(app, @start_fixationButtonPushed, true);
-            app.start_fixation.Position = [74 47 100 23];
+            app.start_fixation.Position = [74 24 100 23];
             app.start_fixation.Text = '呈现注视点';
-
-            % Create Label_10
-            app.Label_10 = uilabel(app.Panel);
-            app.Label_10.HorizontalAlignment = 'right';
-            app.Label_10.Position = [51 13 77 22];
-            app.Label_10.Text = '时间（分钟）';
-
-            % Create set_fix_dur
-            app.set_fix_dur = uieditfield(app.Panel, 'numeric');
-            app.set_fix_dur.Limits = [0 Inf];
-            app.set_fix_dur.Tooltip = {'有5秒进入时间。因此最终时间为此处时间+5秒。'};
-            app.set_fix_dur.Position = [143 13 55 22];
-            app.set_fix_dur.Value = 7.5;
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
