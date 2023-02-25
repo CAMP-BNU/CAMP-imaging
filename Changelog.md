@@ -1,5 +1,10 @@
 # Development Version
 
+* Renamed the project as `CAMP-imaging`. This will be more informative for the future development of the project.
+* Supported fixation without triggering. Now all the fixation screen will be displayed without waiting for the scanner to trigger start, and will remain on screen before the experimenter presses `'Escape'` key([#18](https://github.com/psychelzh/CAMP-imaging/issues/18)).
+* Added a wait-to-end screen after the experiment of two-back task([#19](https://github.com/psychelzh/CAMP-imaging/issues/19)).
+* Enhanced some internal structures of the files.
+
 # 0.2.0
 
 * Removed post-test ([#12](https://github.com/psychelzh/wm-fmri/issues/12)).
