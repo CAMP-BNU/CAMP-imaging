@@ -27,7 +27,7 @@ switch phase
             config = vertcat(config, cur_block); %#ok<AGROW>
         end
     case "test"
-        config = readtable(fullfile('stimuli', 'seq_2back.csv'), "TextType", "string");
+        config = readtable(fullfile('stimuli', 'twoback', 'sequence.csv'), "TextType", "string");
 end
 config.stim_onset = (config.block_id - 1) * block_dur + ...
     (config.trial_id - 1) * trial_dur;

@@ -78,7 +78,7 @@ try
     % display welcome/instr screen and wait for a press of 's' to start
     switch phase
         case "prac"
-            [instr, ~, intsr_alpha] = imread(fullfile('image', 'instr.png'));
+            [instr, ~, intsr_alpha] = imread(fullfile('image', 'twoback', 'instr.png'));
             instr(:, :, 4) = intsr_alpha;
             instr_tex = Screen('MakeTexture', window_ptr, instr);
             Screen('DrawTexture', window_ptr, instr_tex, [], window_rect)
@@ -178,7 +178,7 @@ end
     function [resp_collected, timing_real] = collect_response(trial)
         % this might be time consumig
         stim_file = [num2str(trial.stim), '.jpg'];
-        stim_pic = imread(fullfile('stimuli', trial.stim_type, stim_file));
+        stim_pic = imread(fullfile('stimuli', 'twoback', trial.stim_type, stim_file));
         stim = Screen('MakeTexture', window_ptr, stim_pic);
         % present stimuli
         resp_made = false;
