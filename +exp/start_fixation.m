@@ -2,10 +2,16 @@ function [status, exception] = start_fixation(opts)
 %START_FIXATION Display fixation cross at the center of screen
 
 arguments
+    opts.Mode {mustBeMember(opts.Mode, ["auto", "trigger"])} = "auto"
     opts.Instruction {mustBeTextScalar} = '下面请盯着十字注视点休息'
     opts.Duration (1, 1) {mustBePositive} = 7.5
     opts.PostSlug (1, 1) {mustBePositive} = 5
     opts.SkipSyncTests (1, 1) {mustBeNumericOrLogical} = false
+end
+
+if opts.Mode == "auto"
+    opts.Duration = Inf;
+    opts.PostSlug = 0;
 end
 
 % ---- set default error related outputs ----
@@ -46,19 +52,23 @@ try
     Screen('TextSize', window_ptr, round(0.06 * RectHeight(window_rect)));
     % get inter flip interval
     ifi = Screen('GetFlipInterval', window_ptr);
-    % display instruction
-    DrawFormattedText(window_ptr, double(opts.Instruction), 'center', 'center');
-    Screen('Flip', window_ptr);
-    
-    % here we should detect for a key press and release
-    while ~early_exit
-        [resp_timestamp, key_code] = KbStrokeWait(-1);
-        if key_code(keys.start)
-            start_time = resp_timestamp;
-            break
-        elseif key_code(keys.exit)
-            early_exit = true;
+    if opts.Mode == "trigger"
+        % display instruction
+        DrawFormattedText(window_ptr, double(opts.Instruction), 'center', 'center');
+        Screen('Flip', window_ptr);
+
+        % here we should detect for a key press and release
+        while ~early_exit
+            [resp_timestamp, key_code] = KbStrokeWait(-1);
+            if key_code(keys.start)
+                start_time = resp_timestamp;
+                break
+            elseif key_code(keys.exit)
+                early_exit = true;
+            end
         end
+    else
+        start_time = GetSecs;
     end
 
     % display fixation
@@ -77,7 +87,7 @@ catch exception
     status = 1;
 end
 
-if early_exit
+if opts.Mode == "trigger" && early_exit
     status = 2;
 end
 
