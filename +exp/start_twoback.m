@@ -152,8 +152,8 @@ try
     % post wait-to-end screen
     if ~early_exit && phase == "test"
         early_exit_okay = true;
-        instr_ending = char(readlines(fullfile('common', 'instr_ending.txt'), ...
-            "EmptyLineRule", "skip"));
+        instr_ending = char(strjoin(readlines(fullfile('common', 'instr_ending.txt'), ...
+            "EmptyLineRule", "skip"), "\n"));
         DrawFormattedText(window_ptr, double(instr_ending), 'center', 'center');
         Screen('Flip', window_ptr);
         while ~early_exit
