@@ -52,9 +52,11 @@ keys = struct( ...
     'diff', KbName('4$'));
 
 % ---- stimuli presentation ----
+% the flag to determine if the experiment should exit early
+early_exit = false;
+% the flag to determine if early exiting will be treated as normal
+early_exit_okay = false;
 try
-    % the flag to determine if the experiment should exit early
-    early_exit = false;
     % open a window and set its background color as gray
     [window_ptr, window_rect] = PsychImaging('OpenWindow', screen_to_display, WhiteIndex(screen_to_display));
     % disable character input and hide mouse cursor
@@ -146,11 +148,26 @@ try
         end
 
     end
+
+    % post wait-to-end screen
+    if ~early_exit && phase == "test"
+        early_exit_okay = true;
+        instr_ending = char(readlines(fullfile('common', 'instr_ending.txt'), ...
+            "EmptyLineRule", "skip"));
+        DrawFormattedText(window_ptr, double(instr_ending), 'center', 'center');
+        Screen('Flip', window_ptr);
+        while ~early_exit
+            [~, key_code] = KbStrokeWait(-1);
+            if key_code(keys.exit)
+                early_exit = true;
+            end
+        end
+    end
 catch exception
     status = 1;
 end
 
-if early_exit
+if early_exit && ~early_exit_okay
     status = 2;
 end
 
