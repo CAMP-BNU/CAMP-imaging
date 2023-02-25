@@ -1,3 +1,3 @@
-# wm-fmri
+# CAMP-imaging
 
-This repository contains the code for an fmri experiment of working-memory.
+This repository contains the main code for the imaging part of CAMP project.
