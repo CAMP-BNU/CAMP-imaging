@@ -274,7 +274,7 @@ classdef StartExperiment < matlab.apps.AppBase
             if is_completed
                 if ~isempty(result)
                     if length(result) == 1
-                        tooltip = sprintf('正确率：%.1f%%。', result * 100);
+                        tooltip = sprintf("正确率：%.1f%%。", result * 100);
                     else
                         tooltip = arrayfun(@(type, pc) sprintf("%s正确率：%.1f%%", type, pc), ...
                             ["背景", "位置"], result * 100);
