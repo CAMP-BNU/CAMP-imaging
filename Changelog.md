@@ -1,5 +1,7 @@
 # Development version
 
+* Added AMT practice to the UI, so that the experimenter can run the practice more easily ([#23](https://github.com/psychelzh/CAMP-imaging/issues/23)).
+
 # 0.2.1
 
 * Renamed the project as `CAMP-imaging`. This will be more informative for the future development of the project.
