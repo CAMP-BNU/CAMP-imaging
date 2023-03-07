@@ -185,9 +185,7 @@ Screen('Preference', 'TextRenderer', old_text_render);
 Priority(old_pri);
 
 if opts.SaveData
-    writetable(recordings, fullfile('data', ...
-        sprintf('2back-phase_%s-sub_%03d-run_%d-time_%s.csv', ...
-        phase, opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
+    utils.store_data(recordings, opts.id, "twoback", run);
 end
 
     function [resp_collected, timing_real] = collect_response(trial)
