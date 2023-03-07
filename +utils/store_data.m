@@ -3,11 +3,13 @@ function store_data(data, id, project, run)
 
 filename_stem = generate_storename(id, project, run);
 % the main file contains no timestamp
-writetable(data, fullfile('data', sprintf('%s.csv', filename_stem)));
+writetable(data, fullfile('data', sprintf('%s.tsv', filename_stem)), ...
+    "FileType", "text", "Delimiter", '\t');
 % a temporary copy with timestamp
 writetable(data, fullfile('data', ...
-    sprintf('%s(time-%s).csv', filename_stem, ...
-    datetime("now", "Format", "yyyyMMdd-HHmmss"))));
+    sprintf('%s(time-%s).tsv', filename_stem, ...
+    datetime("now", "Format", "yyyyMMdd-HHmmss"))), ...
+    "FileType", "text", "Delimiter", '\t');
 
 end
 
