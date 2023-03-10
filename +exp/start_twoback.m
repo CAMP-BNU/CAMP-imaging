@@ -78,7 +78,7 @@ try
     % display welcome/instr screen and wait for a press of 's' to start
     switch phase
         case "prac"
-            [instr, ~, intsr_alpha] = imread(fullfile('image', 'twoback', 'instr.png'));
+            [instr, ~, intsr_alpha] = imread(fullfile('stimuli', 'twoback', 'instr', 'instr.png'));
             instr(:, :, 4) = intsr_alpha;
             instr_tex = Screen('MakeTexture', window_ptr, instr);
             Screen('DrawTexture', window_ptr, instr_tex, [], window_rect)
@@ -104,7 +104,7 @@ try
             break
         end
         this_trial = config(trial_order, :);
-        
+
         if this_trial.cond == "rest"
             stim_onset_stamp = nan;
             while ~early_exit
