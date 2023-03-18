@@ -115,6 +115,7 @@ con4Key = KbName('4$');
 
 exitKey = KbName('Escape');
 earlyExit = 0;
+exit = 0;
 
 %载入practice和formal阶段的相关序列
 load([pwd '/stimuli/amt/seq/formal_experiment_information.mat']);
@@ -126,8 +127,8 @@ rectsNum = length(Rects);
 while ~earlyExit
     if phase == "prac"
 
-        baseLineMat = zeros(1,8);%trial,arrowtype,disptime,reponse,responsetime,iscorrect,RT
-        responseMat = zeros(trialNum*pracblockNum,12);%probe呈现时间，test1开始时间，反应时间，选择背景，实际背景，是否正确，test2开始时间，test2被试第一次按键时间，test反应时间，所选位置，实际位置，是否正确
+        baseLineMat = zeros(1,6);%trial,arrowtype,Onset,duration,RT,iscorrect,block
+        responseMat = zeros(trialNum*pracblockNum,12);%onset,duration,onset,duration,onset,duration,RT,iscorrect,onset,duration,RT,iscorrect
         baseline_trial_seq = 0;
         %呈现指导语
         for ins = 1:3
@@ -139,7 +140,7 @@ while ~earlyExit
 
             while 1
                 [ ~ , keycode] = KbStrokeWait();
-                if keycode(KbName('s'))%按s开始
+                if keycode(KbName('s'))%按s继续
                     break
                 elseif keycode(exitKey)
                     earlyExit = 1;
@@ -162,8 +163,9 @@ while ~earlyExit
         Screen('Flip',wPtr);
 
         while 1
-            [ ~ , keycode] = KbStrokeWait();
+            [ currentTime , keycode] = KbStrokeWait();
             if keycode(KbName('s'))%按s开始
+                StartTime = currentTime;
                 break
             elseif keycode(exitKey)
                 earlyExit = 1;
@@ -185,10 +187,6 @@ while ~earlyExit
         end
         clear pic obj object_pic_name
 
-        %TimeInfo = zeros(pracblockNum,4);
-        %learningPhaseTimeMat = zeros(pracblockNum*12,2);
-
-
         for block = 1:pracblockNum
 
             startposList = Shuffle([5*ones(1,trialNum/2),8*ones(1,trialNum/2)]);
@@ -209,14 +207,11 @@ while ~earlyExit
                 Screen('FrameRect',wPtr,rectlineColor,Rects,rectlineWidth);
                 Screen('FrameRect',wPtr,rectlineColor,RectsEdge,rectlineWidth*2);
                 [~,sampleDispTime] = Screen('Flip',wPtr,delayStartTime+sampledelayTime-ifi);
-                %learningPhaseTimeMat(trialSeq,1) =  sampleDispTime;
-                %             if trial == 1
-                %                 learningPhaseStratTime = sampleDispTime;
-                %             end
+                responseMat(trialSeq,1) = sampleDispTime-StartTime;
 
                 Screen('DrawLines', wPtr, crossLines, crossWidth, crossColor,[xCenter,yCenter],2);
                 [~,delayStartTime] = Screen('Flip',wPtr,sampleDispTime+presentTime-ifi);
-                %learningPhaseTimeMat(trialSeq,2) =  delayStartTime;
+                responseMat(trialSeq,2) = delayStartTime-sampleDispTime;
             end
 
             currentTime = GetSecs;
@@ -227,7 +222,7 @@ while ~earlyExit
                     Screen('Flip',wPtr);
                 end
                 baseline_trial_seq = baseline_trial_seq+1;
-                baseLineMat(baseline_trial_seq,:) = zeros(1,8);
+                baseLineMat(baseline_trial_seq,:) = zeros(1,6);
                 baseLineMat(baseline_trial_seq,1) = baseline_trial_seq;
 
                 %获取箭头
@@ -249,11 +244,10 @@ while ~earlyExit
                     baseline_task_start = 1;
                     responseTime = 0;
                     [~,arrowStartTime] = Screen('Flip',wPtr,delayStartTime+sampledelayTime-ifi);
-                    %baselineTaskStart = arrowStartTime;
                 else
                     [~,arrowStartTime] = Screen('Flip',wPtr,responseTime+baselineTaskinterval-ifi);
                 end
-                baseLineMat(baseline_trial_seq,3) = arrowStartTime;
+                baseLineMat(baseline_trial_seq,3) = arrowStartTime-StartTime;
 
                 resp_made = 0;
                 while ~resp_made
@@ -288,23 +282,26 @@ while ~earlyExit
                     end
                     if currentTime >= baselineTaskduration+sampledelayTime-1.5*ifi+delayStartTime
                         response = 0;
+                        responseTime = currentTime;
                         break
                     end
                 end
                 if earlyExit == 1
                     break
                 end
-
-                baseLineMat(baseline_trial_seq,4) = response;
-                baseLineMat(baseline_trial_seq,5) = responseTime;
-                baseLineMat(baseline_trial_seq,6) = (response == arrowDir);
-                baseLineMat(baseline_trial_seq,7) = responseTime-arrowStartTime;
-                baseLineMat(baseline_trial_seq,8) = block;
+                baseLineMat(baseline_trial_seq,4) = responseTime-arrowStartTime;
+                if response>0
+                    baseLineMat(baseline_trial_seq,5) = (response == arrowDir);
+                elseif response==0
+                    baseLineMat(baseline_trial_seq,5) = -1;
+                else
+                    baseLineMat(baseline_trial_seq,5) = -2;
+                end
+                baseLineMat(baseline_trial_seq,6) = block;
             end
             if earlyExit == 1
                 break
             end
-            %baselineTaskEnd = GetSecs;
 
             firstTrial = 1;
             for trial = 1:12
@@ -315,13 +312,13 @@ while ~earlyExit
                 if firstTrial == 1
                     firstTrial = 0;
                     [~,probeStart] = Screen('Flip',wPtr,delayStartTime++baselineTaskduration+sampledelayTime-ifi);
-                    %probePhaseStartTime = probeStart;
                 else
-                    [~,probeStart] = Screen('Flip',wPtr,feedbackStartTime+feedbackTime-ifi);
+                    [~,probeStart] = Screen('Flip',wPtr,feedback2StartTime+feedbackTime-ifi);
                 end
 
                 DrawFormattedText(wPtr,double(contextInfo),'center','center',[0 0 0]);
                 [~,test1Start] = Screen('Flip',wPtr,probeStart+probeDispTime-ifi);
+
 
                 resp_made = 0;
                 while 1
@@ -385,7 +382,7 @@ while ~earlyExit
                     feedbackColor = wrongColor;
                 end
                 DrawFormattedText(wPtr,double(feedback),'center','center',feedbackColor);
-                feedbackStartTime = Screen('Flip', wPtr);
+                feedback1StartTime = Screen('Flip', wPtr);
 
 
                 randomStartSeq = startposList(trial);
@@ -393,7 +390,7 @@ while ~earlyExit
                 Screen('FillRect',wPtr,currentRectColor,randomStartRect);
                 Screen('FrameRect',wPtr,rectlineColor,Rects,rectlineWidth);
                 Screen('FrameRect',wPtr,rectlineColor,RectsEdge,rectlineWidth*2);
-                [~,test2Start] = Screen('Flip',wPtr,feedbackStartTime+feedbackTime-ifi);
+                [~,test2Start] = Screen('Flip',wPtr,feedback1StartTime+feedbackTime-ifi);
 
                 currentChoosedSeq = randomStartSeq;
                 firstInput = 1;
@@ -456,19 +453,17 @@ while ~earlyExit
                     feedbackColor = wrongColor;
                 end
                 DrawFormattedText(wPtr,double(feedback),'center','center',feedbackColor);
-                feedbackStartTime = Screen('Flip', wPtr);
+                feedback2StartTime = Screen('Flip', wPtr);
 
-                responseMat(trialSeq,1) = probeStart;
-                responseMat(trialSeq,2) = test1Start;
-                responseMat(trialSeq,3) = t1responseTime;
-                responseMat(trialSeq,4) = choosedContext;
-                responseMat(trialSeq,5) = pracprobeMat(trialSeq,3);
-                responseMat(trialSeq,6) = conisCorrect;
-                responseMat(trialSeq,7) = test2Start;
-                responseMat(trialSeq,8) = test2firstInput;
-                responseMat(trialSeq,9) = t2responseTime;
-                responseMat(trialSeq,10) = currentChoosedSeq;
-                responseMat(trialSeq,11) = prac_object_rect_seq(pracprobeMat(trialSeq,2));
+                responseMat(trialSeq,3) = probeStart-StartTime;
+                responseMat(trialSeq,4) = test1Start-probeStart;
+                responseMat(trialSeq,5) = test1Start--StartTime;
+                responseMat(trialSeq,6) = feedback1StartTime-test1Start;
+                responseMat(trialSeq,7) = t1responseTime-test1Start;
+                responseMat(trialSeq,8) = conisCorrect;
+                responseMat(trialSeq,9) = test2Start-StartTime;
+                responseMat(trialSeq,10) = feedback2StartTime-test2Start;
+                responseMat(trialSeq,11) = test2firstInput-test2Start;
                 responseMat(trialSeq,12) = posisCorrect;
 
             end
@@ -477,9 +472,10 @@ while ~earlyExit
                 break
             end
 
-            meanBlockBaselineACC = mean(baseLineMat((baseLineMat(:,8)==block & baseLineMat(:,4)~=0),6));
-            meanBlockBaselineRT = mean(baseLineMat((baseLineMat(:,8)==block & baseLineMat(:,4)~=0),7));
-            meanBlockConACC = mean(responseMat((block*trialNum-trialNum+1):block*trialNum,6),6);
+            meanBlockBaselineACC = length(baseLineMat((baseLineMat(:,6)==block & baseLineMat(:,5)==1)))/length(baseLineMat((baseLineMat(:,6)==block & baseLineMat(:,5)~=-1)));
+            meanBlockBaselineRT = mean(baseLineMat((baseLineMat(:,6)==block & baseLineMat(:,5)~=-1),4));
+            BlockConisCorrect = responseMat((block*trialNum-trialNum+1):block*trialNum,8);
+            meanBlockConACC = length(find(BlockConisCorrect==1))/length(BlockConisCorrect);
             meanBlockPosACC = mean(responseMat((block*trialNum-trialNum+1):block*trialNum,12));
             feedback = ['本轮您在朝向判断任务中的正确率为' num2str(meanBlockBaselineACC) ',反应时为' num2str(meanBlockBaselineRT) '.\n\n'...
                 '您背景回忆的正确率为' num2str(meanBlockConACC) '\n\n' '您位置回忆的正确率为' num2str(meanBlockPosACC) '\n\n' '请等待主试按键继续'];
@@ -488,7 +484,7 @@ while ~earlyExit
 
             while 1
                 [ ~ , keycode] = KbStrokeWait(-1);
-                if keycode(KbName('s'))%按s开始
+                if keycode(KbName('s'))%按s继续
                     break;
                 elseif keycode(exitKey)
                     earlyExit = 1;
@@ -505,25 +501,29 @@ while ~earlyExit
             end
 
         end
-
         if earlyExit ~=1
             finished = '您已完成本练习，按任意键退出';
         else
             finished = '您已终止本练习，按任意键退出';
         end
         DrawFormattedText(wPtr,double(finished),'center','center',[0 0 0]);
-        Screen('Flip',wPtr,feedbackStartTime+feedbackTime-ifi);
+        Screen('Flip',wPtr,feedback2StartTime+feedbackTime-ifi);
         KbStrokeWait;
-
+        exit= 1;
     end
+    if exit == 1
+        break
+    end
+
+
 
     %% formal experiment
 
     if phase == "test"
         
         firstbaselineTask = 1;
-        baseLineMat = zeros(1,8);%trial,arrowtype,disptime,reponse,responsetime,iscorrect,RT
-        responseMat = zeros(trialNum*blockNum,12);%probe呈现时间，test1开始时间，反应时间，选择背景，实际背景，是否正确，test2开始时间，test2被试第一次按键时间，test反应时间，所选位置，实际位置，是否正确
+        baseLineMat = zeros(1,6);%trial,arrowtype,Onset,duration,RT,iscorrect,block
+        responseMat = zeros(trialNum*blockNum,12);%onset,duration,onset,duration,onset,duration,RT,iscorrect,onset,duration,RT,iscorrect
         ListenChar(2);
         HideCursor;
 
@@ -543,31 +543,6 @@ while ~earlyExit
                 block_array = (blockNum/2+1:blockNum);
         end
 
-        if run == 1
-            instractor = '下面将进行联系记忆实验的正式测试';
-        else
-            instractor = '下面将进行联系记忆实验的第二个run';
-        end
-        DrawFormattedText(wPtr,double(instractor),'center','center',[0 0 0]);
-        Screen('Flip',wPtr);
-
-        while 1
-            [ currentTime , keycode] = KbStrokeWait(-1);
-            if keycode(KbName('s'))%按s开始
-                StartTime = currentTime;
-                break;
-            elseif keycode(exitKey)
-                earlyExit = 1;
-                break
-            end
-        end
-        if earlyExit==1
-            break
-        end
-
-        %TimeInfo = zeros(blockNum,4);
-        %learningPhaseTimeMat = zeros(blockNum*trialNum,2);
-
         for block = block_array(1:length(block_array))
 
             startposList = Shuffle([5*ones(1,trialNum/2),8*ones(1,trialNum/2)]);
@@ -575,6 +550,16 @@ while ~earlyExit
             for trial = 1:12
 
                 trialSeq = (block-1)*trialNum + trial;
+
+                if (block ==1 || block ==blockNum/2+1) && trial == 1
+                    if run == 1
+                        instractor = '下面将进行联系记忆实验的正式测试';
+                    else
+                        instractor = '下面将进行联系记忆实验的第二个run';
+                    end
+                    DrawFormattedText(wPtr,double(instractor),'center','center',[0 0 0]);
+                    Screen('Flip',wPtr);
+                end
 
                 %绘制context
                 context = true_sample_mat(trialSeq,6);
@@ -590,16 +575,31 @@ while ~earlyExit
                 Screen('FrameRect',wPtr,rectlineColor,Rects,rectlineWidth);
                 Screen('FrameRect',wPtr,rectlineColor,RectsEdge,rectlineWidth*2);
 
-                Screen('Flip',wPtr,StartTime+true_sample_mat(trialSeq,7)-ifi);
-                %learningPhaseTimeMat(trialSeq,1) =  sampleDispTime;
-                %             if trial == 1
-                %                 learningPhaseStratTime = sampleDispTime;
-                %             end
+                if (block ==1 || block ==blockNum/2+1) && trial == 1
+                    while 1
+                        [ currentTime , keycode] = KbStrokeWait(-1);
+                        if keycode(KbName('s'))%按s开始
+                            StartTime = currentTime;
+                            break;
+                        elseif keycode(exitKey)
+                            earlyExit = 1;
+                            break
+                        end
+                    end
+                end
+                if earlyExit == 1
+                    break
+                end
+
+                [~,sampleDispTime] = Screen('Flip',wPtr,StartTime+true_sample_mat(trialSeq,8)-ifi);
+                responseMat(trialSeq,1) = sampleDispTime-StartTime;
 
                 Screen('DrawLines', wPtr, crossLines, crossWidth, crossColor,[xCenter,yCenter],2);
-                [~,delayStartTime] = Screen('Flip',wPtr,StartTime+true_sample_mat(trialSeq,8)-ifi);
-                %learningPhaseTimeMat(trialSeq,2) =  delayStartTime;
+                [~,delayStartTime] = Screen('Flip',wPtr,StartTime+true_sample_mat(trialSeq,9)-ifi);
+                responseMat(trialSeq,2) = delayStartTime-sampleDispTime;
+
             end
+
 
             if firstbaselineTask
                 firstbaselineTask = 0;
@@ -608,12 +608,12 @@ while ~earlyExit
             baseline_task_start = 0;
             currentTime = GetSecs;
 
-            while currentTime<baselineTaskduration+sampledelayTime-1.5*ifi+delayStartTime
+           while currentTime<baselineTaskduration+sampledelayTime-1.5*ifi+delayStartTime
                 if baseline_task_start ~=0
                     Screen('Flip',wPtr);
                 end
                 baseline_trial_seq = baseline_trial_seq+1;
-                baseLineMat(baseline_trial_seq,:) = zeros(1,8);
+                baseLineMat(baseline_trial_seq,:) = zeros(1,6);
                 baseLineMat(baseline_trial_seq,1) = baseline_trial_seq;
 
                 %获取箭头
@@ -635,11 +635,10 @@ while ~earlyExit
                     baseline_task_start = 1;
                     responseTime = 0;
                     [~,arrowStartTime] = Screen('Flip',wPtr,delayStartTime+sampledelayTime-ifi);
-                    %baselineTaskStart = arrowStartTime;
                 else
                     [~,arrowStartTime] = Screen('Flip',wPtr,responseTime+baselineTaskinterval-ifi);
                 end
-                baseLineMat(baseline_trial_seq,3) = arrowStartTime;
+                baseLineMat(baseline_trial_seq,3) = arrowStartTime-StartTime;
 
                 resp_made = 0;
                 while ~resp_made
@@ -674,41 +673,40 @@ while ~earlyExit
                     end
                     if currentTime >= baselineTaskduration+sampledelayTime-1.5*ifi+delayStartTime
                         response = 0;
+                        responseTime = currentTime;
                         break
                     end
                 end
                 if earlyExit == 1
                     break
                 end
-                baseLineMat(baseline_trial_seq,4) = response;
-                baseLineMat(baseline_trial_seq,5) = responseTime;
-                baseLineMat(baseline_trial_seq,6) = (response == arrowDir);
-                baseLineMat(baseline_trial_seq,7) = responseTime-arrowStartTime;
-                baseLineMat(baseline_trial_seq,8) = block;
-                currentTime = GetSecs;
+                baseLineMat(baseline_trial_seq,4) = responseTime-arrowStartTime;
+                if response>0
+                    baseLineMat(baseline_trial_seq,5) = (response == arrowDir);
+                elseif response==0
+                    baseLineMat(baseline_trial_seq,5) = -1;
+                else
+                    baseLineMat(baseline_trial_seq,5) = -2;
+                end
+                baseLineMat(baseline_trial_seq,6) = block;
             end
             if earlyExit == 1
                 break
             end
-            %baselineTaskEnd = GetSecs;
 
-            firstTrial = 1;
+
             for trial = 1:12
                 trialSeq = (block-1)*trialNum + trial;
 
                 %绘制sample
                 Screen('DrawTexture',wPtr,sampleTextture{trueprobeMat(trialSeq,1)},[],testSampleLoc);
 
-                if firstTrial == 1
-                    firstTrial = 0;
-                    [~,probeStart] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,4)-ifi);
-                    %probePhaseStartTime = probeStart;
-                else
-                    [~,probeStart] = Screen('Flip',wPtr,test2Start+positionTestTime-ifi);
-                end
+
+                [~,probeStart] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,5)-ifi);
+
 
                 DrawFormattedText(wPtr,double(contextInfo),'center','center',[0 0 0]);
-                [~,test1Start] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,5)-ifi);
+                [~,test1Start] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,6)-ifi);
 
                 randomStartSeq = startposList(trial);
                 randomStartRect = Rects(:,randomStartSeq)';
@@ -763,7 +761,7 @@ while ~earlyExit
                     conisCorrect = -1;
                 end
 
-                [~,test2Start] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,6)-ifi);
+                [~,test2Start] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,7)-ifi);
 
                 currentChoosedSeq = randomStartSeq;
                 firstInput = 1;
@@ -821,35 +819,36 @@ while ~earlyExit
                     posisCorrect = 0;
                 end
 
-                responseMat(trialSeq,1) = probeStart;
-                responseMat(trialSeq,2) = test1Start;
-                responseMat(trialSeq,3) = t1responseTime;
-                responseMat(trialSeq,4) = choosedContext;
-                responseMat(trialSeq,5) = trueprobeMat(trialSeq,3);
-                responseMat(trialSeq,6) = conisCorrect;
-                responseMat(trialSeq,7) = test2Start;
-                responseMat(trialSeq,8) = test2firstInput;
-                responseMat(trialSeq,9) = t2responseTime;
-                responseMat(trialSeq,10) = currentChoosedSeq;
-                responseMat(trialSeq,11) = object_rect_seq(trueprobeMat(trialSeq,2));
+                responseMat(trialSeq,3) = probeStart-StartTime;
+                responseMat(trialSeq,4) = test1Start-probeStart;
+                responseMat(trialSeq,5) = test1Start-StartTime;
+                responseMat(trialSeq,6) = test2Start-test1Start;
+                responseMat(trialSeq,7) = t1responseTime-test1Start;
+                responseMat(trialSeq,8) = conisCorrect;
+                responseMat(trialSeq,9) = test2Start-StartTime;
+                responseMat(trialSeq,10) = currentTime-test2Start;
+                responseMat(trialSeq,11) = test2firstInput-test2Start;
                 responseMat(trialSeq,12) = posisCorrect;
             end
-            %         TimeInfo(block,:) = [learningPhaseStratTime baselineTaskStart baselineTaskEnd probePhaseStartTime];
         end
 
         if earlyExit == 1
             break
         end
-        instr_ending = char(strjoin(readlines(fullfile('common', 'instr_ending.txt'), ...
-            "EmptyLineRule", "skip"), "\n"));
-        DrawFormattedText(window_ptr, double(instr_ending), 'center', 'center');
-        Screen('Flip', window_ptr);
-        while 1
-            [~, key_code] = KbStrokeWait(-1);
-            if key_code(exitKey)
-                break
-            end
+    end
+    instr_ending = char(strjoin(readlines(fullfile('common', 'instr_ending.txt'), ...
+        "EmptyLineRule", "skip"), "\n"));
+    DrawFormattedText(wPtr, double(instr_ending), 'center', 'center');
+    Screen('Flip', wPtr);
+    while 1
+        [~, key_code] = KbStrokeWait(-1);
+        if key_code(exitKey)
+            exit = 1;
+            break
         end
+    end
+    if exit==1
+        break
     end
 end
 Screen('CloseAll');  %Close all the screens
@@ -858,35 +857,61 @@ ListenChar;
 ShowCursor;
 
 %%结果记录
+%载入practice和formal阶段的相关序列
+load([pwd '/stimuli/amt/seq/resultTemplate.mat']);
+switch phase
+    case 'prac'
+        ResultTable = practiceresulttemplate;
+    case 'test'
+        if run == 1
+            ResultTable = run1resulttemplate;
+        else
+            ResultTable = run2resulttemplate;
+        end
+end
+if run==1
+    for block = 1:4
+        for testphase = 1:2
+            ResultTable((block-1)*48 + (testphase-1)*12+1:(block-1)*48+testphase*12,9:10) = array2table(responseMat((block-1)*12+1:block*12,2*testphase-1:2*testphase));
+        end
+    end
+    for block = 1:4
+        for testphase = 3:4
+            ResultTable((block-1)*48 + (testphase-1)*12+1:(block-1)*48+testphase*12,9:12) = array2table(responseMat((block-1)*12+1:block*12,4*(testphase-1)-3:4*(testphase-1)));
+        end
+    end
+else
+    for block = 5:8
+        for testphase = 1:2
+            ResultTable((block-5)*48 + (testphase-1)*12+1:(block-5)*48+testphase*12,9:10) = array2table(responseMat((block-1)*12+1:block*12,2*testphase-1:2*testphase));
+        end
+    end
+    for block = 5:8
+        for testphase = 3:4
+            ResultTable((block-5)*48 + (testphase-1)*12+1:(block-5)*48+testphase*12,9:12) = array2table(responseMat((block-1)*12+1:block*12,4*(testphase-1)-3:4*(testphase-1)));
+        end
+    end
+end
+for distrial = 1:size(baseLineMat,1)
+    distratorresulttemplate(1,[1 3 4 5 9 10 11 12]) = array2table([run baseLineMat(distrial,[6 1 2 3 4 4 5])]);
+    ResultTable(192+distrial,:) = distratorresulttemplate;
+end
 
-Result = array2table(responseMat,'VariableNames',{'probeStart','test1Start','t1responseTime',...
-    'choosedContext','trueContext','conisCorrect','test2Start','test2firstInput','t2finialResponse',...
-    'choosedPostion','truePosition','posisCorrect'});
-distractTaskResult = array2table(baseLineMat,'VariableNames',{'trial','arrowDir','arrowshowTime',...
-    'response','responsedTime','isCorrect','RT','block'});
-%specificTimeInfo = TimeInfo;
-filename1 = fullfile('data', ...
+
+filename = fullfile('data', ...
     sprintf('AMT-phase_%s-sub_%03d-run_%d-time_%s.csv', ...
     phase, opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss")));
-filename2 = fullfile('data', ...
-    sprintf('AMT-phase_%s-sub_%03d-run_%d-time_%s_distractTask.csv', ...
-    phase, opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss")));
-%experimentEnd = GetSecs;
-%experimentTime = experimentEnd-experimentStart;
 
-writetable(distractTaskResult, filename2);
 if phase == "test"
-    utils.store_data(Result, opts.id, "amt", run);
+    utils.store_data(ResultTable, opts.id, "amt", run);
 else
-    writetable(Result, filename1);
+    writetable(ResultTable, filename);
 end
 if run == 2
     responseMat = responseMat(49:96,:);
 end
-meanConACC = sum(responseMat(responseMat(:,6)~=-1,6))/length(find(responseMat(:,6)~=-1));
-%meanConRT = sum(responseMat(responseMat(:,6)~=-1,3)-responseMat(responseMat(:,6)~=-1,2))/length(find(responseMat(:,6)~=-1));
+meanConACC = sum(responseMat(responseMat(:,8)~=-1,8))/length(find(responseMat(:,8)~=-1));
 meanPosACC = mean(responseMat(:,12));
-%meanPosRT = mean(responseMat(responseMat(:,9)-responseMat(:,7)>0,9)-responseMat(responseMat(:,9)-responseMat(:,7)>0,7));
 dispResult = [meanConACC,meanPosACC];
 
 if earlyExit == 1
