@@ -1,4 +1,4 @@
-# Development version
+# 1.0.0
 
 * Added AMT practice to the UI, so that the experimenter can run the practice more easily ([#23](https://github.com/psychelzh/CAMP-imaging/issues/23)).
 * Unified the format of participant response data ([#25](https://github.com/CAMP-BNU/CAMP-imaging/issues/25)).
