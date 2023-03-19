@@ -114,6 +114,7 @@ con3Key = KbName('3#');
 con4Key = KbName('4$');
 
 exitKey = KbName('Escape');
+startKey = KbName('s');
 earlyExit = 0;
 exit = 0;
 
@@ -578,7 +579,7 @@ while ~earlyExit
                 if (block ==1 || block ==blockNum/2+1) && trial == 1
                     while 1
                         [ currentTime , keycode] = KbStrokeWait(-1);
-                        if keycode(KbName('s'))%按s开始
+                        if keycode(startKey)%按s开始
                             StartTime = currentTime;
                             break;
                         elseif keycode(exitKey)
@@ -591,11 +592,11 @@ while ~earlyExit
                     break
                 end
 
-                [~,sampleDispTime] = Screen('Flip',wPtr,StartTime+true_sample_mat(trialSeq,8)-ifi);
+                [~,sampleDispTime] = Screen('Flip',wPtr,StartTime+true_sample_mat(trialSeq,8));
                 responseMat(trialSeq,1) = sampleDispTime-StartTime;
 
                 Screen('DrawLines', wPtr, crossLines, crossWidth, crossColor,[xCenter,yCenter],2);
-                [~,delayStartTime] = Screen('Flip',wPtr,StartTime+true_sample_mat(trialSeq,9)-ifi);
+                [~,delayStartTime] = Screen('Flip',wPtr,StartTime+true_sample_mat(trialSeq,9));
                 responseMat(trialSeq,2) = delayStartTime-sampleDispTime;
 
             end
@@ -608,7 +609,7 @@ while ~earlyExit
             baseline_task_start = 0;
             currentTime = GetSecs;
 
-           while currentTime<baselineTaskduration+sampledelayTime-1.5*ifi+delayStartTime
+           while currentTime<baselineTaskduration+sampledelayTime-0.5*ifi+delayStartTime
                 if baseline_task_start ~=0
                     Screen('Flip',wPtr);
                 end
@@ -634,9 +635,9 @@ while ~earlyExit
                 if baseline_task_start ==0
                     baseline_task_start = 1;
                     responseTime = 0;
-                    [~,arrowStartTime] = Screen('Flip',wPtr,delayStartTime+sampledelayTime-ifi);
+                    [~,arrowStartTime] = Screen('Flip',wPtr,delayStartTime+sampledelayTime);
                 else
-                    [~,arrowStartTime] = Screen('Flip',wPtr,responseTime+baselineTaskinterval-ifi);
+                    [~,arrowStartTime] = Screen('Flip',wPtr,responseTime+baselineTaskinterval);
                 end
                 baseLineMat(baseline_trial_seq,3) = arrowStartTime-StartTime;
 
@@ -671,7 +672,7 @@ while ~earlyExit
                             end
                         end
                     end
-                    if currentTime >= baselineTaskduration+sampledelayTime-1.5*ifi+delayStartTime
+                    if currentTime >= baselineTaskduration+sampledelayTime-0.5*ifi+delayStartTime
                         response = 0;
                         responseTime = currentTime;
                         break
@@ -702,11 +703,11 @@ while ~earlyExit
                 Screen('DrawTexture',wPtr,sampleTextture{trueprobeMat(trialSeq,1)},[],testSampleLoc);
 
 
-                [~,probeStart] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,5)-ifi);
+                [~,probeStart] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,5));
 
 
                 DrawFormattedText(wPtr,double(contextInfo),'center','center',[0 0 0]);
-                [~,test1Start] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,6)-ifi);
+                [~,test1Start] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,6));
 
                 randomStartSeq = startposList(trial);
                 randomStartRect = Rects(:,randomStartSeq)';
@@ -741,7 +742,7 @@ while ~earlyExit
                             end
                         end
                     end
-                    if currentTime >= test1Start+contestTestTime-ifi
+                    if currentTime >= test1Start+contestTestTime-0.5*ifi
                         break
                     end
                 end
@@ -761,7 +762,7 @@ while ~earlyExit
                     conisCorrect = -1;
                 end
 
-                [~,test2Start] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,7)-ifi);
+                [~,test2Start] = Screen('Flip',wPtr,StartTime+trueprobeMat(trialSeq,7));
 
                 currentChoosedSeq = randomStartSeq;
                 firstInput = 1;
@@ -806,7 +807,7 @@ while ~earlyExit
                         Screen('Flip', wPtr);
                         currentTime = GetSecs;
                     end
-                    if currentTime>=test2Start+positionTestTime-ifi
+                    if currentTime>=test2Start+positionTestTime-0.5*ifi
                         break
                     end
                 end
@@ -831,7 +832,6 @@ while ~earlyExit
                 responseMat(trialSeq,12) = posisCorrect;
             end
         end
-
         if earlyExit == 1
             break
         end
@@ -847,7 +847,7 @@ while ~earlyExit
             break
         end
     end
-    if exit==1
+    if exit==1 
         break
     end
 end
