@@ -245,10 +245,9 @@ classdef StartExperiment < matlab.apps.AppBase
                     result = 0;
                 end
             else
-                status = 0;
                 exception = [];
                 try
-                    [~, ~, result] = exp.start_amt("test", app.project_progress + 1, ...
+                    [status, result] = exp.start_amt("test", app.project_progress + 1, ...
                         "id", app.user.id, "SkipSyncTests", app.skip_sync_tests);
                 catch exception
                     status = 1;

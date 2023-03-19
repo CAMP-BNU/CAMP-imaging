@@ -1,3 +1,16 @@
+# 1.0.0
+
+* Added AMT practice to the UI, so that the experimenter can run the practice more easily ([#23](https://github.com/psychelzh/CAMP-imaging/issues/23)).
+* Unified the format of participant response data ([#25](https://github.com/CAMP-BNU/CAMP-imaging/issues/25)).
+* Unified the response keys for all the tasks.
+* Enhanced AMT task from many aspects.
+  * Background color is now white.
+  * Practice instructions are now integrated into the task ([#17](https://github.com/CAMP-BNU/CAMP-imaging/issues/17)).
+  * Support to exit the task by pressing `'Escape'` key.
+  * Added a wait-to-end screen after the experiment ([#19](https://github.com/CAMP-BNU/CAMP-imaging/issues/19)).
+  * Added the real onset time of each trial to the response data.
+  * Adjust the flip time to avoid stimulation early present
+
 # 0.2.1
 
 * Renamed the project as `CAMP-imaging`. This will be more informative for the future development of the project.

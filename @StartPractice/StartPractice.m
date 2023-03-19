@@ -2,17 +2,19 @@ classdef StartPractice < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
-        UIFigure  matlab.ui.Figure
-        LabelPC   matlab.ui.control.Label
-        Button    matlab.ui.control.Button
-        Label     matlab.ui.control.Label
+        UIFigure          matlab.ui.Figure
+        label_amt_pc      matlab.ui.control.Label
+        button_amt        matlab.ui.control.Button
+        label_twoback_pc  matlab.ui.control.Label
+        button_twoback    matlab.ui.control.Button
+        Label             matlab.ui.control.Label
     end
 
     % Callbacks that handle component events
     methods (Access = private)
 
-        % Button pushed function: Button
-        function ButtonPushed(app, event)
+        % Button pushed function: button_twoback
+        function button_twobackPushed(app, event)
             [status, exception, recordings] = exp.start_twoback("prac", "SkipSyncTests", true, "SaveData", false);
             if status ~= 0
                 if status == 2
@@ -26,8 +28,25 @@ classdef StartPractice < matlab.apps.AppBase
                 return
             end
             pc = mean(recordings.acc(recordings.cond ~= "filler"), 'omitnan');
-            app.LabelPC.Text = sprintf('上一次正确率：%.1f%%', pc * 100);
-            app.LabelPC.Visible = "on";
+            app.label_twoback_pc.Text = sprintf('上一次正确率：%.1f%%', pc * 100);
+            app.label_twoback_pc.Visible = "on";
+        end
+
+        % Button pushed function: button_amt
+        function button_amtButtonPushed(app, event)
+            try 
+                [~, result] = exp.start_amt("prac", SkipSyncTests=true);
+            catch exception
+                if ~isempty(exception)
+                    uialert(app.UIFigure, getReport(exception), ...
+                        '出错了', 'Interpreter', 'html');
+                end
+                return
+            end
+            text = arrayfun(@(type, pc) sprintf("%s正确率：%.1f%%", type, pc), ...
+                            ["背景", "位置"], result * 100);
+            app.label_amt_pc.Text = ["上一次表现：", text];
+            app.label_amt_pc.Visible = "on";
         end
     end
 
@@ -50,20 +69,34 @@ classdef StartPractice < matlab.apps.AppBase
             app.Label.Position = [138 134 77 24];
             app.Label.Text = '准备部分';
 
-            % Create Button
-            app.Button = uibutton(app.UIFigure, 'push');
-            app.Button.ButtonPushedFcn = createCallbackFcn(app, @ButtonPushed, true);
-            app.Button.FontName = 'Microsoft YaHei UI';
-            app.Button.Position = [126 77 100 23];
-            app.Button.Text = '练习一次';
+            % Create button_twoback
+            app.button_twoback = uibutton(app.UIFigure, 'push');
+            app.button_twoback.ButtonPushedFcn = createCallbackFcn(app, @button_twobackPushed, true);
+            app.button_twoback.FontName = 'Microsoft YaHei UI';
+            app.button_twoback.Position = [198 77 100 23];
+            app.button_twoback.Text = '工作记忆练习';
 
-            % Create LabelPC
-            app.LabelPC = uilabel(app.UIFigure);
-            app.LabelPC.HorizontalAlignment = 'center';
-            app.LabelPC.FontName = 'Microsoft YaHei UI';
-            app.LabelPC.Visible = 'off';
-            app.LabelPC.Position = [102 45 148 22];
-            app.LabelPC.Text = '上一次正确率：        ';
+            % Create label_twoback_pc
+            app.label_twoback_pc = uilabel(app.UIFigure);
+            app.label_twoback_pc.HorizontalAlignment = 'center';
+            app.label_twoback_pc.FontName = 'Microsoft YaHei UI';
+            app.label_twoback_pc.Visible = 'off';
+            app.label_twoback_pc.Position = [174 45 148 22];
+            app.label_twoback_pc.Text = '';
+
+            % Create button_amt
+            app.button_amt = uibutton(app.UIFigure, 'push');
+            app.button_amt.ButtonPushedFcn = createCallbackFcn(app, @button_amtButtonPushed, true);
+            app.button_amt.Position = [51 77 100 23];
+            app.button_amt.Text = '联系记忆练习';
+
+            % Create label_amt_pc
+            app.label_amt_pc = uilabel(app.UIFigure);
+            app.label_amt_pc.HorizontalAlignment = 'center';
+            app.label_amt_pc.FontName = 'Microsoft YaHei UI';
+            app.label_amt_pc.Visible = 'off';
+            app.label_amt_pc.Position = [27 22 148 45];
+            app.label_amt_pc.Text = '';
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';

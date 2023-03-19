@@ -177,8 +177,6 @@ Screen('Preference', 'SkipSyncTests', old_sync);
 Screen('Preference', 'TextRenderer', old_text_render);
 Priority(old_pri);
 
-writetable(recordings, fullfile('data', ...
-    sprintf('movie-sub_%03d-run_%d-time_%s.csv', ...
-    opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
+utils.store_data(recordings, opts.id, "movie", run);
 
 end

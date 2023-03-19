@@ -78,7 +78,7 @@ try
     % display welcome/instr screen and wait for a press of 's' to start
     switch phase
         case "prac"
-            [instr, ~, intsr_alpha] = imread(fullfile('image', 'twoback', 'instr.png'));
+            [instr, ~, intsr_alpha] = imread(fullfile('stimuli', 'twoback', 'instr', 'instr.png'));
             instr(:, :, 4) = intsr_alpha;
             instr_tex = Screen('MakeTexture', window_ptr, instr);
             Screen('DrawTexture', window_ptr, instr_tex, [], window_rect)
@@ -104,7 +104,7 @@ try
             break
         end
         this_trial = config(trial_order, :);
-        
+
         if this_trial.cond == "rest"
             stim_onset_stamp = nan;
             while ~early_exit
@@ -185,9 +185,7 @@ Screen('Preference', 'TextRenderer', old_text_render);
 Priority(old_pri);
 
 if opts.SaveData
-    writetable(recordings, fullfile('data', ...
-        sprintf('2back-phase_%s-sub_%03d-run_%d-time_%s.csv', ...
-        phase, opts.id, run, datetime("now", "Format", "yyyyMMdd_HHmmss"))))
+    utils.store_data(recordings, opts.id, "twoback", run);
 end
 
     function [resp_collected, timing_real] = collect_response(trial)
