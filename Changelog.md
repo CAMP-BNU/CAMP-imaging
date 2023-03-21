@@ -10,6 +10,7 @@
   * Added a wait-to-end screen after the experiment ([#19](https://github.com/CAMP-BNU/CAMP-imaging/issues/19)).
   * Added the real onset time of each trial to the response data.
   * Adjust the flip time to avoid stimulation early present
+  * Set stimuli size according to screen size
 
 # 0.2.1
 
