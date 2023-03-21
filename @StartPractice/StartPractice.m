@@ -35,7 +35,7 @@ classdef StartPractice < matlab.apps.AppBase
         % Button pushed function: button_amt
         function button_amtButtonPushed(app, event)
             try 
-                [~, ~, result] = exp.start_amt("prac", SkipSyncTests=true);
+                [~, result] = exp.start_amt("prac", SkipSyncTests=true);
             catch exception
                 if ~isempty(exception)
                     uialert(app.UIFigure, getReport(exception), ...
