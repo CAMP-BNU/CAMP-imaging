@@ -508,7 +508,7 @@ while ~earlyExit
             finished = '您已终止本练习，按任意键退出';
         end
         DrawFormattedText(wPtr,double(finished),'center','center',[0 0 0]);
-        Screen('Flip',wPtr,feedback2StartTime+feedbackTime-ifi);
+        Screen('Flip',wPtr);
         KbStrokeWait;
         exit= 1;
     end
