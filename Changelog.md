@@ -2,6 +2,7 @@
 
 * Enhanced AMT task by setting stimuli size according to screen size.
 * Fixed aspect ratio error for movie presentation.
+* Added support for upgrading the experiment code from GitHub. Please call `exp.upgrade()` to update the code.
 
 # 1.0.0
 
