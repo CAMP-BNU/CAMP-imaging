@@ -1,4 +1,4 @@
-# Development Version
+# 1.0.1
 
 * Enhanced AMT task by setting stimuli size according to screen size.
 * Fixed aspect ratio error for movie presentation.
