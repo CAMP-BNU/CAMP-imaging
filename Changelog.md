@@ -1,3 +1,9 @@
+# 1.0.1
+
+* Enhanced AMT task by setting stimuli size according to screen size.
+* Fixed aspect ratio error for movie presentation.
+* Added support for upgrading the experiment code from GitHub. Please call `exp.upgrade()` to update the code.
+
 # 1.0.0
 
 * Added AMT practice to the UI, so that the experimenter can run the practice more easily ([#23](https://github.com/psychelzh/CAMP-imaging/issues/23)).

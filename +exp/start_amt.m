@@ -75,7 +75,7 @@ crossColor = black;
 crossLengthPixels = 20;
 crossLines = [-crossLengthPixels crossLengthPixels 0 0; 0 0 -crossLengthPixels crossLengthPixels];%注视点设置
 rectlineColor = black;
-rectSize = [300,300];%每个矩形的长和宽
+rectSize = [RectHeight(rect)*300/1080,RectHeight(rect)*300/1080];%每个矩形的长和宽
 rectInterval = [0,0];%矩阵中矩形之间没有间隔
 matrixRowNumber = 4;%矩形构成的矩阵一行有多少矩形
 matrixColumnNumber = 3;%矩形构成的矩阵一列有多少矩形
@@ -508,7 +508,7 @@ while ~earlyExit
             finished = '您已终止本练习，按任意键退出';
         end
         DrawFormattedText(wPtr,double(finished),'center','center',[0 0 0]);
-        Screen('Flip',wPtr,feedback2StartTime+feedbackTime-ifi);
+        Screen('Flip',wPtr);
         KbStrokeWait;
         exit= 1;
     end
