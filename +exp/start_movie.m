@@ -63,6 +63,10 @@ try
     Screen('Flip', window_ptr);
     % open the first movie
     Screen('OpenMovie', window_ptr, movie_names{1}, 1);
+    % calculate the real movie rect
+    movie_asp = 2.35;
+    movie_rect_base = [0, 0, RectWidth(window_rect), floor(RectWidth(window_rect) / movie_asp)];
+    movie_rect_real = CenterRect(movie_rect_base, window_rect);
     % here we should detect for a key press and release
     while true
         [resp_timestamp, key_code] = KbStrokeWait(-1);
@@ -122,7 +126,7 @@ try
             end
 
             % Draw the new texture immediately to screen:
-            Screen('DrawTexture', window_ptr, tex);
+            Screen('DrawTexture', window_ptr, tex, [], movie_rect_real);
 
             % Update display:
             vbl = Screen('Flip', window_ptr);
