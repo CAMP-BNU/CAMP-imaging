@@ -600,6 +600,9 @@ while ~earlyExit
                 responseMat(trialSeq,2) = delayStartTime-sampleDispTime;
 
             end
+            if earlyExit == 1
+                break
+            end
 
 
             if firstbaselineTask
