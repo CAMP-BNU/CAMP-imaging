@@ -1,5 +1,7 @@
 # Development Version
 
+* Fixed a bug in AMT task when exiting the experiment early.
+
 # 1.0.1
 
 * Enhanced AMT task by setting stimuli size according to screen size.
