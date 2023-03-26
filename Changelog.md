@@ -1,5 +1,7 @@
 # Development Version
 
+* Fixed aspect ratio error for mixed-video presentation.
+
 # 1.0.2
 
 * Fixed a bug in AMT task when exiting the experiment early.

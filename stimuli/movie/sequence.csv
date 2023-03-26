@@ -1,5 +1,5 @@
-run,trial,movie
-1,1,long_one
-2,1,long_two
-3,1,short_one
-4,1,short_two
+run,trial,movie,asp
+1,1,long_one,2.35
+2,1,long_two,2.35
+3,1,short_one,
+4,1,short_two,
