@@ -63,10 +63,6 @@ try
     Screen('Flip', window_ptr);
     % open the first movie
     Screen('OpenMovie', window_ptr, movie_names{1}, 1);
-    % calculate the real movie rect
-    movie_asp = 2.35;
-    movie_rect_base = [0, 0, RectWidth(window_rect), floor(RectWidth(window_rect) / movie_asp)];
-    movie_rect_real = CenterRect(movie_rect_base, window_rect);
     % here we should detect for a key press and release
     while true
         [resp_timestamp, key_code] = KbStrokeWait(-1);
@@ -102,11 +98,6 @@ try
         % Start playback engine:
         Screen('PlayMovie', movie, 1, 0, 1);
 
-        % to speed things up, open next movie
-        if trial_order < height(config)
-            Screen('OpenMovie', window_ptr, movie_names{trial_order + 1} , 1);
-        end
-
         start_time_movie = nan;
         while ~early_exit
             [~, ~, key_code] = KbCheck(-1);
@@ -126,6 +117,13 @@ try
             end
 
             % Draw the new texture immediately to screen:
+            % calculate the real movie rect
+            movie_asp = config.asp(trial_order);
+            if isnan(movie_asp)
+                movie_asp = 16 / 9;
+            end
+            movie_rect_base = [0, 0, RectWidth(window_rect), floor(RectWidth(window_rect) / movie_asp)];
+            movie_rect_real = CenterRect(movie_rect_base, window_rect);
             Screen('DrawTexture', window_ptr, tex, [], movie_rect_real);
 
             % Update display:
