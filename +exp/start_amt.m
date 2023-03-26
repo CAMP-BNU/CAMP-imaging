@@ -119,8 +119,8 @@ earlyExit = 0;
 exit = 0;
 
 %载入practice和formal阶段的相关序列
-load([pwd '/stimuli/amt/seq/formal_experiment_information.mat']);
-load([pwd '/stimuli/amt/seq/practice_information.mat']);
+load(fullfile('sequence', 'amt', 'formal_experiment_information.mat'))
+load(fullfile('sequence', 'amt', 'practice_information.mat'))
 rectsNum = length(Rects);
 
 %% practice
@@ -133,7 +133,7 @@ while ~earlyExit
         baseline_trial_seq = 0;
         %呈现指导语
         for ins = 1:3
-            insPic =  [pwd '/stimuli/amt/ins/ins' num2str(ins) '.jpg'];
+            insPic = fullfile('instr', 'amt', sprintf('ins%d.jpg', ins));
             pic = imread(insPic);
             insTextture =  Screen('MakeTexture',wPtr,pic);
             Screen('DrawTexture',wPtr,insTextture);
@@ -861,7 +861,7 @@ ShowCursor;
 
 %%结果记录
 %载入practice和formal阶段的相关序列
-load([pwd '/stimuli/amt/seq/resultTemplate.mat']);
+load(fullfile('sequence', 'amt', 'resultTemplate.mat'))
 switch phase
     case 'prac'
         ResultTable = practiceresulttemplate;

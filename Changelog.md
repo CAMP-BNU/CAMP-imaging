@@ -1,3 +1,7 @@
+# 1.0.4
+
+* Now stimuli are untracked. Please follow the instructions in the `README.md` file to download the stimuli.
+
 # 1.0.3
 
 * Fixed aspect ratio error for mixed-video presentation.

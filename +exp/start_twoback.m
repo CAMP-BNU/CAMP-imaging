@@ -78,7 +78,7 @@ try
     % display welcome/instr screen and wait for a press of 's' to start
     switch phase
         case "prac"
-            [instr, ~, intsr_alpha] = imread(fullfile('stimuli', 'twoback', 'instr', 'instr.png'));
+            [instr, ~, intsr_alpha] = imread(fullfile('instr', 'twoback', 'instr.png'));
             instr(:, :, 4) = intsr_alpha;
             instr_tex = Screen('MakeTexture', window_ptr, instr);
             Screen('DrawTexture', window_ptr, instr_tex, [], window_rect)
@@ -325,7 +325,7 @@ switch phase
             config = vertcat(config, cur_block); %#ok<AGROW>
         end
     case "test"
-        config = readtable(fullfile('stimuli', 'twoback', 'sequence.csv'), "TextType", "string");
+        config = readtable(fullfile('sequence', 'twoback', 'sequence.csv'), "TextType", "string");
 end
 config.stim_onset = (config.block_id - 1) * block_dur + ...
     (config.trial_id - 1) * trial_dur;
