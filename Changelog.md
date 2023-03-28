@@ -1,5 +1,10 @@
 # Development version
 
+# 1.0.5
+
+* Fixed a bug in AMT task when finished run one experiment.
+* Enhance AMT task by including response label when data recording.
+
 # 1.0.4
 
 * Now stimuli are untracked. Please follow the instructions in the `README.md` file to download the stimuli.
