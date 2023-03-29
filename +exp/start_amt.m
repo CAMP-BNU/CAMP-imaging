@@ -128,8 +128,8 @@ rectsNum = length(Rects);
 while ~earlyExit
     if phase == "prac"
 
-        baseLineMat = zeros(1,6);%trial,arrowtype,Onset,duration,RT,iscorrect,block
-        responseMat = zeros(trialNum*pracblockNum,12);%onset,duration,onset,duration,onset,duration,RT,iscorrect,onset,duration,RT,iscorrect
+        baseLineMat = zeros(1,7);%trial,arrowtype,Onset,duration,response，RT,iscorrect,block
+        responseMat = zeros(trialNum*pracblockNum,14);%onset,duration,onset,duration,onset,duration,Response,RT,iscorrect,onset,duration,Response,RT,iscorrect
         baseline_trial_seq = 0;
         %呈现指导语
         for ins = 1:3
@@ -223,7 +223,7 @@ while ~earlyExit
                     Screen('Flip',wPtr);
                 end
                 baseline_trial_seq = baseline_trial_seq+1;
-                baseLineMat(baseline_trial_seq,:) = zeros(1,6);
+                baseLineMat(baseline_trial_seq,:) = zeros(1,7);
                 baseLineMat(baseline_trial_seq,1) = baseline_trial_seq;
 
                 %获取箭头
@@ -290,15 +290,16 @@ while ~earlyExit
                 if earlyExit == 1
                     break
                 end
-                baseLineMat(baseline_trial_seq,4) = responseTime-arrowStartTime;
+                baseLineMat(baseline_trial_seq,4) = response;
+                baseLineMat(baseline_trial_seq,5) = responseTime-arrowStartTime;
                 if response>0
-                    baseLineMat(baseline_trial_seq,5) = (response == arrowDir);
+                    baseLineMat(baseline_trial_seq,6) = (response == arrowDir);
                 elseif response==0
-                    baseLineMat(baseline_trial_seq,5) = -1;
+                    baseLineMat(baseline_trial_seq,6) = -1;
                 else
-                    baseLineMat(baseline_trial_seq,5) = -2;
+                    baseLineMat(baseline_trial_seq,6) = -2;
                 end
-                baseLineMat(baseline_trial_seq,6) = block;
+                baseLineMat(baseline_trial_seq,7) = block;
             end
             if earlyExit == 1
                 break
@@ -460,12 +461,14 @@ while ~earlyExit
                 responseMat(trialSeq,4) = test1Start-probeStart;
                 responseMat(trialSeq,5) = test1Start--StartTime;
                 responseMat(trialSeq,6) = feedback1StartTime-test1Start;
-                responseMat(trialSeq,7) = t1responseTime-test1Start;
-                responseMat(trialSeq,8) = conisCorrect;
-                responseMat(trialSeq,9) = test2Start-StartTime;
-                responseMat(trialSeq,10) = feedback2StartTime-test2Start;
-                responseMat(trialSeq,11) = test2firstInput-test2Start;
-                responseMat(trialSeq,12) = posisCorrect;
+                responseMat(trialSeq,7) = choosedContext;
+                responseMat(trialSeq,8) = t1responseTime-test1Start;
+                responseMat(trialSeq,9) = conisCorrect;
+                responseMat(trialSeq,10) = test2Start-StartTime;
+                responseMat(trialSeq,11) = feedback2StartTime-test2Start;
+                responseMat(trialSeq,12) = currentChoosedSeq;
+                responseMat(trialSeq,13) = test2firstInput-test2Start;
+                responseMat(trialSeq,14) = posisCorrect;
 
             end
 
@@ -473,11 +476,11 @@ while ~earlyExit
                 break
             end
 
-            meanBlockBaselineACC = length(baseLineMat((baseLineMat(:,6)==block & baseLineMat(:,5)==1)))/length(baseLineMat((baseLineMat(:,6)==block & baseLineMat(:,5)~=-1)));
-            meanBlockBaselineRT = mean(baseLineMat((baseLineMat(:,6)==block & baseLineMat(:,5)~=-1),4));
-            BlockConisCorrect = responseMat((block*trialNum-trialNum+1):block*trialNum,8);
+            meanBlockBaselineACC = length(baseLineMat((baseLineMat(:,7)==block & baseLineMat(:,6)==1)))/length(baseLineMat((baseLineMat(:,7)==block & baseLineMat(:,6)~=-1)));
+            meanBlockBaselineRT = mean(baseLineMat((baseLineMat(:,7)==block & baseLineMat(:,6)~=-1),5));
+            BlockConisCorrect = responseMat((block*trialNum-trialNum+1):block*trialNum,9);
             meanBlockConACC = length(find(BlockConisCorrect==1))/length(BlockConisCorrect);
-            meanBlockPosACC = mean(responseMat((block*trialNum-trialNum+1):block*trialNum,12));
+            meanBlockPosACC = mean(responseMat((block*trialNum-trialNum+1):block*trialNum,14));
             feedback = ['本轮您在朝向判断任务中的正确率为' num2str(meanBlockBaselineACC) ',反应时为' num2str(meanBlockBaselineRT) '.\n\n'...
                 '您背景回忆的正确率为' num2str(meanBlockConACC) '\n\n' '您位置回忆的正确率为' num2str(meanBlockPosACC) '\n\n' '请等待主试按键继续'];
             DrawFormattedText(wPtr,double(feedback),'center','center',[0 0 0]);
@@ -523,8 +526,8 @@ while ~earlyExit
     if phase == "test"
         
         firstbaselineTask = 1;
-        baseLineMat = zeros(1,6);%trial,arrowtype,Onset,duration,RT,iscorrect,block
-        responseMat = zeros(trialNum*blockNum,12);%onset,duration,onset,duration,onset,duration,RT,iscorrect,onset,duration,RT,iscorrect
+        baseLineMat = zeros(1,7);%trial,arrowtype,Onset,duration,Response,RT,iscorrect,block
+        responseMat = zeros(trialNum*blockNum,14);%onset,duration,onset,duration,onset,duration,Response,RT,iscorrect,onset,duration,Response,RT,iscorrect
         ListenChar(2);
         HideCursor;
 
@@ -617,7 +620,7 @@ while ~earlyExit
                     Screen('Flip',wPtr);
                 end
                 baseline_trial_seq = baseline_trial_seq+1;
-                baseLineMat(baseline_trial_seq,:) = zeros(1,6);
+                baseLineMat(baseline_trial_seq,:) = zeros(1,7);
                 baseLineMat(baseline_trial_seq,1) = baseline_trial_seq;
 
                 %获取箭头
@@ -684,15 +687,16 @@ while ~earlyExit
                 if earlyExit == 1
                     break
                 end
-                baseLineMat(baseline_trial_seq,4) = responseTime-arrowStartTime;
+                baseLineMat(baseline_trial_seq,4) = response;
+                baseLineMat(baseline_trial_seq,5) = responseTime-arrowStartTime;
                 if response>0
-                    baseLineMat(baseline_trial_seq,5) = (response == arrowDir);
+                    baseLineMat(baseline_trial_seq,6) = (response == arrowDir);
                 elseif response==0
-                    baseLineMat(baseline_trial_seq,5) = -1;
+                    baseLineMat(baseline_trial_seq,6) = -1;
                 else
-                    baseLineMat(baseline_trial_seq,5) = -2;
+                    baseLineMat(baseline_trial_seq,6) = -2;
                 end
-                baseLineMat(baseline_trial_seq,6) = block;
+                baseLineMat(baseline_trial_seq,7) = block;
             end
             if earlyExit == 1
                 break
@@ -825,14 +829,16 @@ while ~earlyExit
 
                 responseMat(trialSeq,3) = probeStart-StartTime;
                 responseMat(trialSeq,4) = test1Start-probeStart;
-                responseMat(trialSeq,5) = test1Start-StartTime;
+                responseMat(trialSeq,5) = test1Start--StartTime;
                 responseMat(trialSeq,6) = test2Start-test1Start;
-                responseMat(trialSeq,7) = t1responseTime-test1Start;
-                responseMat(trialSeq,8) = conisCorrect;
-                responseMat(trialSeq,9) = test2Start-StartTime;
-                responseMat(trialSeq,10) = currentTime-test2Start;
-                responseMat(trialSeq,11) = test2firstInput-test2Start;
-                responseMat(trialSeq,12) = posisCorrect;
+                responseMat(trialSeq,7) = choosedContext;
+                responseMat(trialSeq,8) = t1responseTime-test1Start;
+                responseMat(trialSeq,9) = conisCorrect;
+                responseMat(trialSeq,10) = test2Start-StartTime;
+                responseMat(trialSeq,11) = currentTime-test2Start;
+                responseMat(trialSeq,12) = currentChoosedSeq;
+                responseMat(trialSeq,13) = test2firstInput-test2Start;
+                responseMat(trialSeq,14) = posisCorrect;
             end
         end
         if earlyExit == 1
@@ -880,7 +886,7 @@ if run==1
     end
     for block = 1:4
         for testphase = 3:4
-            ResultTable((block-1)*48 + (testphase-1)*12+1:(block-1)*48+testphase*12,9:12) = array2table(responseMat((block-1)*12+1:block*12,4*(testphase-1)-3:4*(testphase-1)));
+            ResultTable((block-1)*48 + (testphase-1)*12+1:(block-1)*48+testphase*12,9:13) = array2table(responseMat((block-1)*12+1:block*12,5*(testphase-1)-5:5*(testphase-1)-1));
         end
     end
 else
@@ -891,12 +897,12 @@ else
     end
     for block = 5:8
         for testphase = 3:4
-            ResultTable((block-5)*48 + (testphase-1)*12+1:(block-5)*48+testphase*12,9:12) = array2table(responseMat((block-1)*12+1:block*12,4*(testphase-1)-3:4*(testphase-1)));
+            ResultTable((block-5)*48 + (testphase-1)*12+1:(block-5)*48+testphase*12,9:13) = array2table(responseMat((block-1)*12+1:block*12,5*(testphase-1)-5:5*(testphase-1)-1));
         end
     end
 end
 for distrial = 1:size(baseLineMat,1)
-    distratorresulttemplate(1,[1 3 4 5 9 10 11 12]) = array2table([run baseLineMat(distrial,[6 1 2 3 4 4 5])]);
+    distratorresulttemplate(1,[1 3 4 5 9 10 11 12 13]) = array2table([run baseLineMat(distrial,[7 1 2 3 5 4 5 6])]);
     ResultTable(192+distrial,:) = distratorresulttemplate;
 end
 
@@ -912,9 +918,11 @@ else
 end
 if run == 2
     responseMat = responseMat(49:96,:);
+else
+    responseMat = responseMat(1:48,:);
 end
-meanConACC = sum(responseMat(responseMat(:,8)~=-1,8))/length(find(responseMat(:,8)~=-1));
-meanPosACC = mean(responseMat(:,12));
+meanConACC = sum(responseMat(responseMat(:,9)~=-1,9))/size(responseMat,1);
+meanPosACC = mean(responseMat(:,14));
 dispResult = [meanConACC,meanPosACC];
 
 if earlyExit == 1

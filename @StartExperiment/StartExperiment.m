@@ -74,6 +74,9 @@ classdef StartExperiment < matlab.apps.AppBase
     end
     
     properties (Access = private, Constant)
+        % experiment properties
+        exp_name = "CAMP-IMAGING"
+
         % make sure this name is part of the panel
         project_names = ["resting1", "assocmem", "movie1", "struct1", ...
             "resting2", "twoback", "movie2", "struct2"]
@@ -415,7 +418,8 @@ classdef StartExperiment < matlab.apps.AppBase
                 return
             end
             outfile = fullfile(dest, ...
-                sprintf('wm-fmri-%s.zip', ...
+                sprintf('%s-%s.zip', ...
+                app.exp_name, ...
                 datetime("now", "Format", "yyyyMMdd_HHmmss")));
             try
                 zip(outfile, {'.db', 'data'})
