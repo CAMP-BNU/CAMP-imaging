@@ -1,2 +1,2 @@
 function ver = version()
-ver = '1.0.6.9000';
+ver = '1.0.7';

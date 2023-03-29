@@ -1,4 +1,6 @@
-# Development version
+# 1.0.7
+
+* Fixed a critical error of movie sequence file reading.
 
 # 1.0.6
 
