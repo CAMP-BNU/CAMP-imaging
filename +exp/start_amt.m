@@ -119,11 +119,22 @@ startKey = KbName('s');
 earlyExit = 0;
 exit = 0;
 
-%载入practice和formal阶段的相关序列
-prac_sample_mat = table2array(readtable(fullfile('sequence', 'amt', 'prac_sample_mat.csv')));
-pracprobeMat = table2array(readtable(fullfile('sequence', 'amt', 'pracprobeMat.csv')));
-true_sample_mat = table2array(readtable(fullfile('sequence', 'amt', 'true_sample_mat.csv')));
-trueprobeMat = table2array(readtable(fullfile('sequence', 'amt', 'trueprobeMat.csv')));
+%载入practice和formal阶段的相关序列与数据记录模板
+if phase == "prac"
+    prac_sample_mat = table2array(readtable(fullfile('sequence', 'amt', 'prac_sample_mat.csv')));
+    pracprobeMat = table2array(readtable(fullfile('sequence', 'amt', 'pracprobeMat.csv')));
+    distratorresulttemplate = readtable(fullfile('sequence', 'amt', 'distratorresulttemplate.csv'));
+    ResultTable = readtable(fullfile('sequence', 'amt', 'practiceresulttemplate.csv'));
+else
+    true_sample_mat = table2array(readtable(fullfile('sequence', 'amt', 'true_sample_mat.csv')));
+    trueprobeMat = table2array(readtable(fullfile('sequence', 'amt', 'trueprobeMat.csv')));
+    distratorresulttemplate = readtable(fullfile('sequence', 'amt', 'distratorresulttemplate.csv'));
+    if run ==1
+        ResultTable = readtable(fullfile('sequence', 'amt', 'run1resulttemplate.csv'));
+    else
+        ResultTable = readtable(fullfile('sequence', 'amt', 'run2resulttemplate.csv'));
+    end
+end
 
 
 %% practice
@@ -832,7 +843,7 @@ while ~earlyExit
 
                 responseMat(trialSeq,3) = probeStart-StartTime;
                 responseMat(trialSeq,4) = test1Start-probeStart;
-                responseMat(trialSeq,5) = test1Start--StartTime;
+                responseMat(trialSeq,5) = test1Start-StartTime;
                 responseMat(trialSeq,6) = test2Start-test1Start;
                 responseMat(trialSeq,7) = choosedContext;
                 responseMat(trialSeq,8) = t1responseTime-test1Start;
@@ -869,21 +880,7 @@ ListenChar;
 ShowCursor;
 
 %%结果记录
-%载入practice和formal阶段的相关序列
-distratorresulttemplate = readtable(fullfile('sequence', 'amt', 'distratorresulttemplate.csv'));
-practiceresulttemplate = readtable(fullfile('sequence', 'amt', 'practiceresulttemplate.csv'));
-run1resulttemplate = readtable(fullfile('sequence', 'amt', 'run1resulttemplate.csv'));
-run2resulttemplate = readtable(fullfile('sequence', 'amt', 'run2resulttemplate.csv'));
-switch phase
-    case 'prac'
-        ResultTable = practiceresulttemplate;
-    case 'test'
-        if run == 1
-            ResultTable = run1resulttemplate;
-        else
-            ResultTable = run2resulttemplate;
-        end
-end
+
 if run==1
     for block = 1:4
         for testphase = 1:2
