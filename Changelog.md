@@ -1,4 +1,4 @@
-# Development version
+# 1.0.8
 
 * Shortened the delay after the end of AMT task.
 
