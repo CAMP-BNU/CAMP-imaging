@@ -98,6 +98,7 @@ for i=1:matrixRowNumber
         Rects(:,rectSeq) = [recentLeftLine; recentTopLine;recentRightLine;recentBottomLine];
     end
 end
+rectsNum = length(Rects);
 clear rectSeq recentLeftLine recentRightLine recentTopLine recentBottomLine i
 %probe阶段位置设置
 testSampleLoc = [xCenter-rectSize(1)*0.5,yCenter-rectSize(2)*0.5,xCenter+rectSize(1)*0.5,yCenter+rectSize(2)*0.5];
@@ -119,9 +120,11 @@ earlyExit = 0;
 exit = 0;
 
 %载入practice和formal阶段的相关序列
-load(fullfile('sequence', 'amt', 'formal_experiment_information.mat'))
-load(fullfile('sequence', 'amt', 'practice_information.mat'))
-rectsNum = length(Rects);
+prac_sample_mat = table2array(readtable(fullfile('sequence', 'amt', 'prac_sample_mat.csv')));
+pracprobeMat = table2array(readtable(fullfile('sequence', 'amt', 'pracprobeMat.csv')));
+true_sample_mat = table2array(readtable(fullfile('sequence', 'amt', 'true_sample_mat.csv')));
+trueprobeMat = table2array(readtable(fullfile('sequence', 'amt', 'trueprobeMat.csv')));
+
 
 %% practice
 
