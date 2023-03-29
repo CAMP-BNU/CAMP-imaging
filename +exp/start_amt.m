@@ -867,7 +867,10 @@ ShowCursor;
 
 %%结果记录
 %载入practice和formal阶段的相关序列
-load(fullfile('sequence', 'amt', 'resultTemplate.mat'))
+distratorresulttemplate = readtable(fullfile('sequence', 'amt', 'distratorresulttemplate.csv'));
+practiceresulttemplate = readtable(fullfile('sequence', 'amt', 'practiceresulttemplate.csv'));
+run1resulttemplate = readtable(fullfile('sequence', 'amt', 'run1resulttemplate.csv'));
+run2resulttemplate = readtable(fullfile('sequence', 'amt', 'run2resulttemplate.csv'));
 switch phase
     case 'prac'
         ResultTable = practiceresulttemplate;
