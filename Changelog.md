@@ -1,5 +1,7 @@
 # Development version
 
+* Shortened the delay after the end of AMT task.
+
 # 1.0.7
 
 * Fixed a critical error of movie sequence file reading.
