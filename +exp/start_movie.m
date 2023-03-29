@@ -12,7 +12,7 @@ status = 0;
 exception = [];
 
 % get config for current run
-config = readtable(fullfile('stimuli', 'movie', 'sequence.csv'));
+config = readtable(fullfile('sequence', 'movie', 'sequence.csv'));
 config = config(config.run == run, :);
 movie_names = cellfun( ...
     @(m) fullfile(pwd, 'stimuli', 'movie', [m, '.mp4']), ...

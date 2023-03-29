@@ -1,5 +1,13 @@
 # Development version
 
+# 1.0.7
+
+* Fixed a critical error of movie sequence file reading.
+
+# 1.0.6
+
+* Interal changes to store sequence as text files for AMT task.
+
 # 1.0.5
 
 * Fixed experiment name (now "CAMP-IMAGING") when copying data.
