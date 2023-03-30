@@ -6,16 +6,16 @@ function varargout = upgrade(args)
 %   Example usage:
 %
 %     % this will check if there is a new version only
-%     UpgradeExperiment("InstallNow", "no")
+%     exp.upgrade("InstallNow", "no")
 %
 %     % these two are identical, both check new version and install it
-%     UpgradeExperiment
-%     UpgradeExperiment("InstallNow", "yes")
+%     exp.upgrade
+%     exp.upgrade("InstallNow", "yes")
 %
 %     % flag indicating newer version is found, latest version number and
 %     % the status number are the three supported outputs respectively, and
 %     % a status of 0 means succeeded, otherwise not
-%     [foundnewer, latestver, status] = UpgradeExperiment(__);
+%     [foundnewer, latestver, status] = exp.upgrade(__);
 arguments (Input)
     args.InstallNow {mustBeMember(args.InstallNow, ["yes", "no"])} = "yes"
 end
