@@ -1,3 +1,7 @@
+# 1.0.9
+
+* Fixed the file name error when storig the 3rd run of working memory task.
+
 # 1.0.8
 
 * Shortened the delay after the end of AMT task.
