@@ -98,6 +98,7 @@ classdef StartExperiment < matlab.apps.AppBase
             app.label_user_dob.Text = string(app.user.dob, 'yyyy-MM-dd');
             if user.id ~= 0
                 app.log_user()
+                app.log_progress()
             end
         end
 
