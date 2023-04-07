@@ -108,9 +108,6 @@ classdef StartExperiment < matlab.apps.AppBase
         end
 
         function load_user(app, user)
-            % update user info to user panel
-            app.push_user(user)
-
             % update progress
             progress = app.progress_history(app.progress_history.user_id == user.id, :);
             app.project_active = progress.project_active;
@@ -136,6 +133,9 @@ classdef StartExperiment < matlab.apps.AppBase
             % remove current user from users and progress history
             app.users_history(app.users_history.id == user.id, :) = [];
             app.progress_history(app.progress_history.user_id == user.id, :) = [];
+
+            % update user info to user panel
+            app.push_user(user)
             app.user_confirmed = true;
         end
 
