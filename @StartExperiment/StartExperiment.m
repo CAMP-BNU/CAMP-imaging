@@ -512,7 +512,7 @@ classdef StartExperiment < matlab.apps.AppBase
             app.label_user_name = uilabel(app.panel_user);
             app.label_user_name.HorizontalAlignment = 'center';
             app.label_user_name.FontName = 'Microsoft YaHei UI';
-            app.label_user_name.Position = [134 114 41 22];
+            app.label_user_name.Position = [114 114 80 22];
             app.label_user_name.Text = '待创建';
 
             % Create Label_3
