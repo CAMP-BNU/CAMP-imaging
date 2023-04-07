@@ -115,20 +115,8 @@ classdef StartExperiment < matlab.apps.AppBase
             app.session_active = progress.session_active;
             app.session_init = progress.session_active;
 
-            % update ui
-            for i = 1:app.project_active - 1
-                panel_project = app.("panel_" + app.project_names(i));
-                panel_project.Enable = "on";
-                for btn = panel_project.Children'
-                    btn.Enable = "off";
-                end
-            end
-            panel_active = app.("panel_" + app.project_names(app.project_active));
-            panel_active.Enable = "on";
-            btns_active = panel_active.Children';
-            for i = 1:app.project_progress
-                btns_active(i).Enable = "off";
-            end
+            % activate next run
+            app.activate_next_run()
 
             % remove current user from users and progress history
             app.users_history(app.users_history.id == user.id, :) = [];
@@ -186,13 +174,12 @@ classdef StartExperiment < matlab.apps.AppBase
             app.project_active = 0;
             app.project_progress = 0;
 
-            % disable all childrens in test tabs, but enable their children
+            % disable all childrens in test tabs
             tabs = app.tab_all_tests.Children';
             for tab = tabs
                 for panel = tab.Children'
-                    panel.Enable = "off";
                     for btn = panel.Children'
-                        btn.Enable = "on";
+                        btn.Enable = "off";
                         btn.BackgroundColor = [0.96, 0.96, 0.96];
                         btn.Tooltip = "";
                     end
@@ -208,10 +195,21 @@ classdef StartExperiment < matlab.apps.AppBase
                     app.project_progress == app.project_runs(app.project_active)
                 app.proceed_next_project()
             end
+            app.activate_next_run()
             if app.user.id ~= 0
                 % user of id 0 is left for tests
                 app.log_progress()
             end
+        end
+
+        function activate_next_run(app)
+            if app.session_active == 0
+                return
+            end
+            panel_active = app.("panel_" + app.project_names(app.project_active));
+            panel_active.Enable = "on";
+            btns_active = panel_active.Children;
+            btns_active(app.project_progress + 1).Enable = "on";
         end
 
         function proceed_next_project(app)
@@ -227,7 +225,6 @@ classdef StartExperiment < matlab.apps.AppBase
             end
             app.project_active = app.project_active + 1;
             app.project_progress = 0;
-            app.("panel_" + app.project_names(app.project_active)).Enable = "on";
         end
 
         function display_stimuli(app, event)
