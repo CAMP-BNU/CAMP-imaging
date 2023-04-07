@@ -1,5 +1,8 @@
 # Development version
 
+* Enable experimenter to modify the participant ID in the UI.
+* Fixed a bug when modify the information of a participant.
+
 # 1.0.9
 
 * Fixed the file name error when storig the 3rd run of working memory task.
