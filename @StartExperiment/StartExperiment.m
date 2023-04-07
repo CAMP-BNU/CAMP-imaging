@@ -194,6 +194,7 @@ classdef StartExperiment < matlab.apps.AppBase
                     for btn = panel.Children'
                         btn.Enable = "on";
                         btn.BackgroundColor = [0.96, 0.96, 0.96];
+                        btn.Tooltip = "";
                     end
                 end
             end

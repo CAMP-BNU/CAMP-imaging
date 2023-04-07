@@ -2,6 +2,7 @@
 
 * Enable experimenter to modify the participant ID in the UI.
 * Fixed a bug when modify the information of a participant.
+* Fixed tooltip leftover from the previous participant ([#27](https://github.com/CAMP-BNU/CAMP-imaging/issues/27)).
 
 # 1.0.9
 
