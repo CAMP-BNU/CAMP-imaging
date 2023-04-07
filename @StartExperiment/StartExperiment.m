@@ -112,10 +112,8 @@ classdef StartExperiment < matlab.apps.AppBase
         end
 
         function load_user(app, user)
-            % remove current user from users history
-            app.users_history(app.users_history.id == user.id, :) = [];
+            % update user info to user panel
             app.push_user(user)
-            app.user_confirmed = true;
 
             % update progress
             progress = app.progress_history(app.progress_history.user_id == user.id, :);
@@ -138,6 +136,11 @@ classdef StartExperiment < matlab.apps.AppBase
             for i = 1:app.project_progress
                 btns_active(i).Enable = "off";
             end
+
+            % remove current user from users and progress history
+            app.users_history(app.users_history.id == user.id, :) = [];
+            app.progress_history(app.progress_history.user_id == user.id, :) = [];
+            app.user_confirmed = true;
         end
 
         function log_progress(app)
@@ -145,11 +148,8 @@ classdef StartExperiment < matlab.apps.AppBase
                 app.user.id, app.session_active, app.project_active, app.project_progress, ...
                 'VariableNames', ...
                 ["user_id", "session_active", "project_active", "project_progress"]);
-            if ~isempty(app.progress_history)
-                app.progress_history(app.progress_history.user_id == app.user.id, :) = [];
-            end
-            app.progress_history = vertcat(app.progress_history, progress);
-            writetable(app.progress_history, app.progress_file)
+            writetable(vertcat(app.progress_history, progress), ...
+                app.progress_file)
         end
 
         function log_user(app)
@@ -544,7 +544,7 @@ classdef StartExperiment < matlab.apps.AppBase
             % Create button_modify
             app.button_modify = uibutton(app.panel_user, 'push');
             app.button_modify.ButtonPushedFcn = createCallbackFcn(app, @button_modifyButtonPushed, true);
-            app.button_modify.Tooltip = {'修改当前用户信息，注意：不能修改编号了。'};
+            app.button_modify.Tooltip = {'修改当前用户信息。'};
             app.button_modify.Position = [84 15 63 23];
             app.button_modify.Text = '修改信息';
 
