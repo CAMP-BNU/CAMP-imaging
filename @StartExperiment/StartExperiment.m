@@ -106,10 +106,6 @@ classdef StartExperiment < matlab.apps.AppBase
             app.user_confirmed = true;
             app.proceed_next()
         end
-        
-        function update_user(app, user)
-            app.push_user(user)
-        end
 
         function load_user(app, user)
             % update user info to user panel

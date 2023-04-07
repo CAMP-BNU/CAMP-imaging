@@ -92,7 +92,12 @@ classdef CreateOrModifyUser < matlab.apps.AppBase
                     return
                 end
             end
-            app.calling_app.register_user(app.user)
+            switch app.calling_type
+                case "create"
+                    app.calling_app.register_user(app.user)
+                case "modify"
+                    app.calling_app.push_user(app.user)
+            end
             app.calling_app.button_modify.Enable = "on";
             app.calling_app.panel_user.Enable = "on";
             delete(app)
