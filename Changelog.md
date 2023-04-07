@@ -1,3 +1,7 @@
+# 2023.04.07-1
+
+* Fixed a bug when modifying participant ID. Now the modified ID is correctly saved in the progress file.
+
 # 2023.04.07
 
 * Enable experimenter to modify the participant ID in the UI.
