@@ -52,7 +52,6 @@ classdef CreateOrModifyUser < matlab.apps.AppBase
             app.calling_type = method;
             app.users_history = opts.UsersHistory;
             if method == "modify"
-                app.ui_user_id.Enable = "off";
                 app.update_user(opts.User)
             end
         end
@@ -64,23 +63,21 @@ classdef CreateOrModifyUser < matlab.apps.AppBase
                 'name', string(app.ui_user_name.Value), ...
                 'sex', string(app.ui_user_sex.Value), ...
                 'dob', app.ui_user_dob.Value);
-            if app.calling_type == "create"
-                if app.ui_user_id.Value == 0
-                    selection = uiconfirm(app.UIFigure, ...
-                        '编号0不能用于正式测试，是否修改？', ...
-                        '确认用户编号', ...
-                        'Icon', 'warning', 'Options', {'是', '否'});
-                    if selection == "是"
-                        return
-                    end
-                elseif ~isempty(app.users_history) && ...
-                        ismember(app.user.id, app.users_history.id)
-                    uialert(app.UIFigure, ...
-                        '当前编号用户已存在，请修改', ...
-                        '确认用户编号', ...
-                        'Icon', 'warning');
+            if app.ui_user_id.Value == 0
+                selection = uiconfirm(app.UIFigure, ...
+                    '编号0不能用于正式测试，是否修改？', ...
+                    '确认用户编号', ...
+                    'Icon', 'warning', 'Options', {'是', '否'});
+                if selection == "是"
                     return
                 end
+            elseif ~isempty(app.users_history) && ...
+                    ismember(app.user.id, app.users_history.id)
+                uialert(app.UIFigure, ...
+                    '当前编号用户已存在，请修改', ...
+                    '确认用户编号', ...
+                    'Icon', 'warning');
+                return
             end
             if ~isempty(app.users_history)
                 cur_user = struct2table(app.user);
@@ -95,7 +92,12 @@ classdef CreateOrModifyUser < matlab.apps.AppBase
                     return
                 end
             end
-            app.calling_app.register_user(app.user)
+            switch app.calling_type
+                case "create"
+                    app.calling_app.register_user(app.user)
+                case "modify"
+                    app.calling_app.push_user(app.user)
+            end
             app.calling_app.button_modify.Enable = "on";
             app.calling_app.panel_user.Enable = "on";
             delete(app)

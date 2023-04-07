@@ -1,3 +1,11 @@
+# 2023.04.07
+
+* Enable experimenter to modify the participant ID in the UI.
+* Fixed a bug when modify the information of a participant.
+* Fixed tooltip leftover from the previous participant ([#27](https://github.com/CAMP-BNU/CAMP-imaging/issues/27)).
+* Enhanced the active project run logic ([#28](https://github.com/CAMP-BNU/CAMP-imaging/issues/28)). Now only the current scan will be enabled, and all the previous and future scans will be disabled.
+* Adopted calver versioning system.
+
 # 1.0.9
 
 * Fixed the file name error when storig the 3rd run of working memory task.
