@@ -47,11 +47,16 @@ classdef CreateOrModifyUser < matlab.apps.AppBase
                 method {mustBeMember(method, ["create", "modify"])}
                 opts.UsersHistory
                 opts.User
+                opts.DisableIDModify (1, 1) {mustBeNumericOrLogical}
             end
             app.calling_app = main_app;
             app.calling_type = method;
             app.users_history = opts.UsersHistory;
             if method == "modify"
+                if opts.DisableIDModify
+                    app.ui_user_id.Enable = "off";
+                    app.ui_user_id.Tooltip = "";
+                end
                 app.update_user(opts.User)
             end
         end

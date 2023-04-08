@@ -1,5 +1,7 @@
 # Development version
 
+* Added warning of ID modification after behavior data generated. And the ID modification is disabled by default after behavior data generated.
+
 # 2023.04.07-1
 
 * Fixed a bug when modifying participant ID. Now the modified ID is correctly saved in the progress file.
